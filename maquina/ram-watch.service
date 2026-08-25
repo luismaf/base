@@ -1,0 +1,8 @@
+[Unit]
+Description=Keep the tmpfs from eating the machine's RAM
+[Service]
+Type=oneshot
+ExecStart=@@KIT@@/ram-watch.sh
+User=@@USUARIO@@
+Nice=10
+IOSchedulingClass=idle

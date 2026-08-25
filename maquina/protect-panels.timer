@@ -1,0 +1,7 @@
+[Unit]
+Description=Reapply OOM protection to agent panels every minute
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+[Install]
+WantedBy=timers.target

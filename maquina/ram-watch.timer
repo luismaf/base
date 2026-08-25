@@ -1,0 +1,12 @@
+[Unit]
+Description=Check tmpfs/RAM pressure every 2 minutes
+
+[Timer]
+# Two minutes, not ten: at 94% used the OOM killer decides in seconds and it
+# chooses the agent panels. A pass over /tmp costs a fraction of a second.
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

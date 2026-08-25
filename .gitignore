@@ -1,0 +1,4 @@
+.latigo/
+__pycache__/
+*.pyc
+*.bak-*
