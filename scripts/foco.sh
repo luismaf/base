@@ -20,12 +20,14 @@
 #
 # Asi nunca peleamos con el usuario y siempre le devolvemos lo que le sacamos.
 set -euo pipefail
-cd "$(dirname "$0")/.."
-CASA=".latigo/foco.casa"
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DIR/.."
+. "$DIR/harness.sh" 2>/dev/null || true
+CASA="${FOCO_CASA:-.tablero/foco.casa}"
 INTERVALO="${FOCO_INTERVALO:-3}"
 
 estado() {
-  herdr agent list 2>/dev/null | python3 -c '
+  ${FOCO_LISTAR:-herdr agent list} 2>/dev/null | python3 -c '
 import sys,json
 try: d=json.load(sys.stdin)
 except Exception: sys.exit(0)
@@ -41,13 +43,13 @@ una_vuelta() {
 
   # Un panel que no es obrero es de la persona: se recuerda como su casa.
   if [ "$kind" != opencode ]; then
-    echo "$pane" > "$CASA"
+    mkdir -p "$(dirname "$CASA")"; echo "$pane" > "$CASA"
     return 0
   fi
 
   # Es un obrero: se lo robamos. Devolver.
   casa=$(cat "$CASA" 2>/dev/null || true)
-  [ -n "$casa" ] && herdr agent focus "$casa" >/dev/null 2>&1 || true
+  [ -n "$casa" ] && ${FOCO_ENFOCAR:-herdr agent focus} "$casa" >/dev/null 2>&1 || true
 }
 
 case "${1:-}" in

@@ -1,56 +1,56 @@
 #!/usr/bin/env bash
-# motores.sh - que ningun panel quede parado, y que el foco vuelva a donde estaba.
+# motores.sh - que ningun panel quede parado.
 #
-# ## Dos problemas que resuelve
+# ## Dos frenos que hay que soltar cuando los obreros son gratis
 #
-# 1. El latigo reparte de a poco por pasada y tiene valvulas de gracia y
-#    cooldown pensadas para obreros que se pagan. Con obreros gratis e
-#    ilimitados esa moderacion esta al reves: un panel parado con treinta items
-#    esperando no es prudencia, es desperdicio. Este bucle barre corto y sigue
-#    barriendo hasta que no queda nadie libre.
+# 1. Las valvulas del reparto —gracia y enfriamiento— existen para no acosar a
+#    un panel y no gastar de mas. Estan calibradas para obreros que se pagan.
+#    Con obreros gratis estan al reves: un panel parado con treinta items en la
+#    cola no es prudencia, es desperdicio. Van a cero.
 #
-# 2. Mandar un mensaje a un panel a veces necesita enfocarlo, y eso le roba el
-#    foco a la persona que esta trabajando en el suyo. Antes de cada vuelta se
-#    anota quien tenia el foco y al terminar se lo devuelve. Que la maquinaria
-#    ande no puede costarle la pantalla al que la esta usando.
+#    Lo que NO va a cero es el tope de intentos de un item: eso protege al ITEM
+#    de rebotar para siempre entre paneles, no al panel de recibir trabajo. Son
+#    dos cosas distintas y sólo una sobra.
+#
+# 2. El reparto entrega de a poco por pasada, y quien se libera a mitad de la
+#    vuelta espera el intervalo entero. Hay que barrer en bucle hasta que no
+#    quede nadie libre o se vacie el tablero.
+#
+# ## Portabilidad
+#
+# Este script habla SOLO por `harness.sh` y `tablero.sh`. No invoca ningun
+# binario externo. Esa restriccion no es estetica: la version anterior llamaba a
+# un binario que existe en un proyecto y no en otro, y como todo iba con
+# `|| true` fallaba en silencio y parecia andar. Si vas a agregar algo aca,
+# pasalo por el harness o no lo agregues.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+DIR="$(cd "$(dirname "$0")" && pwd)"
+RAIZ="$(cd "$DIR/.." && pwd)"
+. "$DIR/harness.sh"
+TABLERO="$DIR/tablero.sh"
+AUTOPILOTO="$DIR/autopiloto.sh"
+JEFE="${JEFE_PANEL:-jefe}"
 INTERVALO="${MOTORES_INTERVALO:-25}"
+VUELTAS="${MOTORES_VUELTAS:-6}"
 
-foco_actual() {
-  herdr agent list 2>/dev/null | python3 -c '
-import sys,json
-try: d=json.load(sys.stdin)
-except Exception: sys.exit(0)
-a=d.get("result",{}).get("agents", d if isinstance(d,list) else [])
-for x in a:
-    if x.get("focused"): print(x.get("pane_id","")); break
-' 2>/dev/null
+libres() {
+  harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '$4=="obrero" && $1!=j && ($2=="idle"||$2=="done")' | wc -l
 }
+pendientes() { "$TABLERO" count 2>/dev/null || echo 0; }
 
 una_vuelta() {
-  local antes libres
-  antes=$(foco_actual || true)
-
-  # Barrer hasta que no quede nadie libre o el tablero se vacie. El latigo
-  # reparte de a poco por pasada, asi que una sola no alcanza.
-  for _ in 1 2 3 4 5 6; do
-    libres=$(latigo sweep --grace 0 --cooldown 0 2>/dev/null | grep -oE '^free:[0-9]+' | cut -d: -f2 || echo 0)
-    [ "${libres:-0}" -eq 0 ] && break
-    [ "$(latigo board pending 2>/dev/null || echo 0)" -eq 0 ] && break
+  local i
+  for i in $(seq 1 "$VUELTAS"); do
+    [ "$(libres)" -eq 0 ] && break
+    [ "$(pendientes)" -eq 0 ] && break
+    # Valvulas en cero: con obreros gratis, esperar es tirar plata.
+    GRACIA=0 COOLDOWN=0 ESPERA=0 bash "$AUTOPILOTO" >/dev/null 2>&1 || true
   done
-
-  # Si quedo alguien libre y no hay items, es que se agoto la fuente: recargar.
-  if [ "${libres:-0}" -gt 0 ] && [ "$(latigo board pending 2>/dev/null || echo 0)" -eq 0 ]; then
-    ./scripts/autoservicio.sh -n 40 >/dev/null 2>&1 || true
-    latigo sweep --grace 0 --cooldown 0 >/dev/null 2>&1 || true
-  fi
-
-  # Devolver el foco a quien lo tenia.
-  [ -n "${antes:-}" ] && herdr agent focus "$antes" >/dev/null 2>&1 || true
+  "$DIR/foco.sh" >/dev/null 2>&1 || true
+  echo "$(date +%H:%M) libres:$(libres) pendientes:$(pendientes)"
 }
 
 case "${1:-}" in
   --loop) while true; do una_vuelta; sleep "$INTERVALO"; done ;;
-  *)      una_vuelta; echo "libres:$(latigo sweep --grace 0 --cooldown 0 2>/dev/null|grep -oE '^free:[0-9]+'|cut -d: -f2) pendientes:$(latigo board pending)" ;;
+  *)      una_vuelta ;;
 esac
