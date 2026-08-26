@@ -125,6 +125,41 @@ cierra un ítem — los demás no pueden ver que rompieron algo.
 constante.** Y una máquina, un compilador a la vez: varios en paralelo no es más
 lento, es un cuelgue, y hay alguien sentado adelante.
 
+## La memoria: soltar lastre antes que el kernel
+
+Un agente **no pesa lo que pesa recién nacido**: arranca en ~230 MB y con horas
+de trabajo encima llega a 1.6 GB. No es una fuga, es contexto acumulado, y crece
+siempre. Con veinte agentes eso son 32 GB que ninguna máquina de escritorio
+tiene.
+
+Cuando la memoria se acaba, **el kernel elige por su cuenta y elige mal**: mata
+el proceso más grande, que suele ser el panel con más trabajo encima. Un equipo
+perdió paneles así.
+
+Por eso conviene soltar nosotros, y con criterio:
+
+1. **Nunca se toca un panel que está trabajando.** Perder trabajo a medio hacer
+   cuesta más que cualquier memoria que se recupere.
+2. **Se recicla el más gordo de los ociosos** — y reciclar es abrirle sesión
+   nueva, no matarlo: el panel sigue ahí y vuelve liviano.
+3. **Uno por vuelta.** Soltar de a muchos por pánico deja la flota sin gente.
+4. **Si no hay ociosos, se avisa y no se toca nada.** Que la memoria apriete no
+   autoriza a romper trabajo; esa decisión es humana.
+
+`scripts/guardia-ram.sh`.
+
+### Y el vigilante que se muere sin avisar
+
+Descubrí que uno de mis bucles había muerto hacía rato y **nadie se enteró**: un
+vigilante muerto se ve exactamente igual que un sistema tranquilo. Es el mismo
+patrón de la sección anterior aplicado a la maquinaria misma — la ausencia no se
+queja.
+
+Así que **algo tiene que vigilar a los vigilantes**. El guardia de memoria, que
+ya corre en bucle, revisa en cada vuelta que los demás sigan vivos y los revive.
+Cualquiera sirve mientras sea uno solo y esté vivo; lo que no sirve es asumir que
+un proceso que se lanzó una vez sigue ahí.
+
 ## El ocio disfrazado de trabajo
 
 Hay algo peor que un panel apagado, porque el apagado al menos se ve: **el panel
