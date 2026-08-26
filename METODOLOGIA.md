@@ -657,3 +657,28 @@ El arreglo tiene dos mitades y hacen falta las dos:
 Y la regla general detras: **si un componente puede quedarse sin su
 dependencia, tiene que notarlo y gritar.** Un `|| true` sobre una llamada que
 es la razon de ser del proceso no es robustez, es un silenciador.
+
+## Un estado que se vuelve a medir no se registra como algo "ya tomado"
+
+Hay dos clases de trabajo y se parecen lo suficiente como para confundirlas:
+
+- **Lo que se hace una vez**: portar la pantalla 47, escribir el manual. Se
+  registra que ya se tomo, y no se vuelve a emitir.
+- **Lo que es un ESTADO y se vuelve a medir**: un error de compilacion, un test
+  que falla, una consulta lenta. No se "toma": se mide de nuevo en cada parte.
+
+Tratar lo segundo como lo primero deja huerfano todo lo que no quedo arreglado.
+Nos paso: 126 ids de error registrados como tomados, cero items abiertos, y 133
+errores vivos que ningun mecanismo podia volver a repartir — con catorce
+obreros libres y el tablero en cero. Cada error cerrado sin arreglar salia del
+sistema para siempre.
+
+Para un estado, el criterio es el PRESENTE y no el pasado: se saltea solo si
+hay un item ABIERTO para eso ahora mismo. Si la medicion lo sigue viendo y
+nadie lo esta trabajando, es trabajo nuevo, aunque tenga un item cerrado atras.
+
+Y el corolario al exportar: **un script que depende de herramientas que el otro
+repo no tiene no se copia.** Pise el `autoservicio.sh` de este repo con la
+version de un proyecto Rust, que llama a `cargo` y lee `docs/SPECS.md`. Con
+todo bajo `|| true`, no habria fallado: habria devuelto cero items en silencio.
+Lo especifico se queda en su repo; lo que viaja es la regla.
