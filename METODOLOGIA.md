@@ -624,3 +624,36 @@ Y el corolario para systemd: `Restart=always` no prueba que algo funcione.
 Antes de darlo por vivo, `systemctl --user is-active` tiene que decir `active`
 y no `activating`, y conviene mirar el uptime — un servicio que se reinicia
 cada 15 segundos esta muerto, solo que ruidosamente.
+
+## Un bucle bajo systemd no ve la flota, y el vacio se lee como calma
+
+`latigo` solo funciona dentro de una sesion de Herdr: fuera contesta
+"not inside a Herdr session (HERDR_ENV != 1)". systemd no hereda ese entorno
+—ni siquiera `~/.local/bin` en el PATH— y como todas las llamadas iban con
+`2>/dev/null || true`, el resultado era tres servicios en verde, `is-active`
+diciendo `active`, y los tres girando en el vacio sin ver un solo panel.
+
+Lo caro no fue eso: fue **como se leyo el vacio**. `latigo roster | wc -l` daba
+cero obreros, y con cero obreros la condicion "hay menos items que gente" es
+falsa, asi que el reloj del jefe concluia que **no habia urgencia de reponer** y
+lo mandaba a escribir documentacion. El mensaje literal era: "el tablero esta
+con 0 pendientes para 16 obreros, asi que no hay urgencia de reponer". La flota
+entera parada, y el mecanismo que existe para evitarlo confirmando que todo
+estaba bien.
+
+Cero nunca significa calma. Cero obreros significa **no puedo medir**; cero
+items con gente libre significa **la urgencia maxima**.
+
+El arreglo tiene dos mitades y hacen falta las dos:
+
+1. `scripts/herdr-entorno.sh --guardar` persiste el entorno desde un panel, y
+   los bucles lo cargan al arrancar. Los units llevan `Environment=PATH=` con
+   `~/.local/bin` adelante.
+2. **El guard.** Cada bucle comprueba que de verdad ve paneles y, si no,
+   **sale con error**. Que systemd lo marque caido es muchisimo mejor que
+   quedar verde sin hacer nada: un bucle que falla se arregla en cinco minutos,
+   uno que gira en el vacio vive semanas.
+
+Y la regla general detras: **si un componente puede quedarse sin su
+dependencia, tiene que notarlo y gritar.** Un `|| true` sobre una llamada que
+es la razon de ser del proceso no es robustez, es un silenciador.
