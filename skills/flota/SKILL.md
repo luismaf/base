@@ -125,6 +125,52 @@ cierra un ítem — los demás no pueden ver que rompieron algo.
 constante.** Y una máquina, un compilador a la vez: varios en paralelo no es más
 lento, es un cuelgue, y hay alguien sentado adelante.
 
+## El ocio disfrazado de trabajo
+
+Hay algo peor que un panel apagado, porque el apagado al menos se ve: **el panel
+que parece trabajar y no produce.** Corre tests cada dos minutos al pedo, hace un
+cambio de una línea y compila otra vez, y otra vez. Cuesta lo mismo que el
+trabajo real, ocupa la máquina, y no aparece en ninguna lista de ociosos.
+
+No es maldad del agente: es lo que hace cualquiera cuando no sabe qué sigue. **Un
+ítem mal escrito, o uno ya terminado que nadie cerró, produce esto casi
+automáticamente.** Así que cuando lo veas, sospechá del ítem antes que del
+agente.
+
+Las tres formas que toma:
+
+- **Compilar en círculos** — cambio mínimo, build, mirar, repetir. Si no sabés
+  qué cambiar, no lo vas a averiguar compilando: leé el código.
+- **Tests de relleno** — un test que comprueba que un tipo existe o que un
+  constructor construye **no puede fallar, y por lo tanto no es un test**. La
+  vara: nombrá en una oración la regla que protege. Si no se puede, no hay test
+  que escribir ahí.
+- **Refactor que nadie pidió**, fuera de la zona propia.
+
+**La detección va por salida, nunca por actividad.** El estado de un panel
+miente: dice "trabajando" tanto cuando escribe código como cuando mira el mismo
+error por quinta vez. Lo que no miente es si los archivos de su zona cambiaron.
+
+```
+panel ocupado + su zona sin cambiar hace rato  ->  teatro
+panel ocupado + su zona cambiando              ->  trabajo
+```
+
+La ventana tiene que ser generosa —media hora, no un minuto— porque leer y
+pensar son trabajo legítimo y no dejan rastro en el disco. Lo que se persigue no
+es el minuto quieto: es la media hora sin una línea escrita. `scripts/teatro.sh`.
+
+Y la salida honesta que hay que dejarle abierta al agente, porque si no la tiene
+va a fingir: **si el ítem ya está hecho, cerralo; si está mal escrito, soltalo;
+si de verdad no hay nada, decilo en una línea.** "No tengo nada" es una respuesta
+correcta. Lo único que no sirve es seguir pareciendo ocupado.
+
+Ojo con una trampa que nos metimos solos: cuando el inventario se agota y se
+recurre a "cubrir con tests" como fuente de trabajo, **eso es exactamente la
+excusa perfecta para el teatro**. Si vas a generar ítems de test, exigí en el
+ítem que cada uno nombre la regla que protege y que el informe diga qué encontró
+roto. Tres tests que encontraron algo valen más que veinte que no.
+
 ## Los cuatro modos de falla
 
 Cuando la flota está parada, mirá en este orden.

@@ -38,6 +38,28 @@ pantalla al que la está usando.**
 `scripts/motores.sh --loop` hace las tres cosas: barre corto, con las válvulas
 en cero, y devuelve el foco.
 
+## Y el ocio disfrazado de trabajo, que es peor que el ocio
+
+Un panel apagado se ve. Un panel que corre tests cada dos minutos al pedo, o que
+hace un cambio de una línea y compila otra vez, se ve **trabajando**: cuesta lo
+mismo, ocupa la máquina, y no figura en ninguna lista de ociosos.
+
+No es maldad del agente. Es lo que hace cualquiera cuando no sabe qué sigue, así
+que **cuando lo veas, sospechá del ítem antes que del agente**: uno mal escrito o
+ya terminado produce esto casi solo.
+
+Se detecta **por salida, nunca por actividad**. El estado del panel miente —dice
+"trabajando" tanto cuando escribe código como cuando mira el mismo error por
+quinta vez—; lo que no miente es si los archivos de su zona cambiaron. Ventana
+generosa, porque leer y pensar son trabajo y no dejan rastro: lo que se persigue
+no es el minuto quieto, es la media hora sin una línea escrita.
+
+Y hay que dejarle al agente una salida honesta, porque si no la tiene finge: si
+el ítem está hecho, que lo cierre; si está mal escrito, que lo suelte; si no hay
+nada, que lo diga en una línea. **"No tengo nada" es una respuesta correcta.**
+
+`scripts/teatro.sh`.
+
 ## Política de empresa: el obrero es barato, el supervisor no
 
 Antes que cualquier otra cosa de este documento, y vale para **todos los
