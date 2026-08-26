@@ -41,6 +41,15 @@ largo=$(cuenta '^error(\[E[0-9]+\])?: ')
 resumen=$(cuenta '^error: (could not compile|aborting due to)')
 largo=$(( ${largo:-0} > ${resumen:-0} ? ${largo:-0} - ${resumen:-0} : 0 ))
 
+# Un parte truncado no es un parte. cargo aborta al primer crate que falla y
+# deja "build failed, waiting for other jobs to finish": lo que quedaba por
+# compilar NUNCA se midio. Dar por bueno ese numero es reportar menos errores
+# de los que hay, que es la direccion mas cara de equivocarse — nos dio "1
+# error" con el workspace a medio medir.
+if grep -q 'waiting for other jobs to finish' "$PARTE" && ! grep -qE '^\s*Finished' "$PARTE"; then
+  echo "?"; exit 3
+fi
+
 max=${declarado:-0}
 [ "${corto:-0}" -gt "$max" ] && max=${corto:-0}
 [ "$largo" -gt "$max" ] && max=$largo
