@@ -125,28 +125,56 @@ cierra un ítem — los demás no pueden ver que rompieron algo.
 constante.** Y una máquina, un compilador a la vez: varios en paralelo no es más
 lento, es un cuelgue, y hay alguien sentado adelante.
 
-## La memoria: soltar lastre antes que el kernel
+## La memoria: medir antes de decidir
 
-Un agente **no pesa lo que pesa recién nacido**: arranca en ~230 MB y con horas
-de trabajo encima llega a 1.6 GB. No es una fuga, es contexto acumulado, y crece
-siempre. Con veinte agentes eso son 32 GB que ninguna máquina de escritorio
-tiene.
+Un agente **no pesa lo que pesa recién nacido**. Medido sobre diecisiete agentes
+reales:
 
-Cuando la memoria se acaba, **el kernel elige por su cuenta y elige mal**: mata
-el proceso más grande, que suele ser el panel con más trabajo encima. Un equipo
-perdió paneles así.
+| | |
+|---|---|
+| Recién nacido | 279 MB |
+| Con horas encima | 780 MB |
+| Crecimiento típico | ~500 MB |
+| Lo que recupera compactar | **83 MB** (12% de uno gordo) |
+| Lo que recupera reiniciar | ~500 MB (todo el crecimiento) |
 
-Por eso conviene soltar nosotros, y con criterio:
+**La conclusión que no esperábamos: compactar sirve poco.** El peso no es la
+conversación, es el runtime. Compactar recupera un octavo; reiniciar recupera
+todo, pero se lleva el contexto puesto.
 
-1. **Nunca se toca un panel que está trabajando.** Perder trabajo a medio hacer
-   cuesta más que cualquier memoria que se recupere.
-2. **Se recicla el más gordo de los ociosos** — y reciclar es abrirle sesión
-   nueva, no matarlo: el panel sigue ahí y vuelve liviano.
-3. **Uno por vuelta.** Soltar de a muchos por pánico deja la flota sin gente.
-4. **Si no hay ociosos, se avisa y no se toca nada.** Que la memoria apriete no
-   autoriza a romper trabajo; esa decisión es humana.
+### El contexto vale distinto según quién
 
-`scripts/guardia-ram.sh`.
+Reiniciar no es gratis aunque la RAM diga que sí: hay que volver a explicarle
+dónde está parado, qué documentos manda leer, cuál es su zona. **Ese tiempo sale
+del objetivo.** Así que la pregunta no es *quién es el más gordo* sino **de quién
+es más caro el contexto**:
+
+- **Largos** — el jefe y el compilador. Su contexto es la memoria del proyecto y
+  reconstruirlo cuesta mucho más que los 500 MB que libera. A éstos se los
+  **compacta, nunca se los reinicia por memoria**.
+- **Cortos** — los que toman un ítem, lo hacen y cierran. Su contexto vale
+  aproximadamente un ítem, así que reiniciarlos cuando ya cerraron cuesta casi
+  nada.
+
+### Las tres que no se hacen
+
+- **No se recicla a nadie que esté trabajando.** Nunca, por ninguna cifra.
+- **No se recicla a un agente joven.** El que nació hace veinte minutos todavía
+  no engordó: reiniciarlo es puro costo, se paga el contexto de nuevo sin
+  recuperar nada.
+- **No se recicla si no hay presión de memoria.** Un agente gordo y ocioso en una
+  máquina holgada no molesta a nadie.
+
+Y de a dos por vuelta, no de a uno: con uno solo a este ritmo no se recupera
+nada y se termina saludando gente todo el día.
+
+### Que el kernel mate lo que se puede volver a abrir
+
+Cuando la memoria se acaba el kernel elige, y elige mal: mata el proceso más
+grande, que suele ser el panel con más trabajo encima. Se invierte la prioridad
+a mano — el plano de control y las sesiones primero protegidos, y como
+sacrificables el escritorio (se vuelve a abrir), el navegador, los compiladores
+(transitorios) y el audio (nadie lo está escuchando). `maquina/protect-panels.sh`.
 
 ### Y el vigilante que se muere sin avisar
 

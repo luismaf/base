@@ -1,54 +1,57 @@
 #!/usr/bin/env bash
-# guardia-ram.sh - soltar lastre a proposito, antes de que lo suelte el kernel.
+# guardia-ram.sh - cuidar la memoria sin romper el trabajo.
 #
-# ## Por que
+# ## Lo que medimos antes de decidir nada
 #
-# Un agente nace en ~230 MB y con horas de trabajo llega a 1.6 GB. No es una
-# fuga: es contexto acumulado, y crece siempre. Con veinte agentes eso son 32 GB
-# que la maquina no tiene.
+# Sobre 17 agentes reales, en esta maquina:
 #
-# Cuando la memoria se acaba, el kernel elige por su cuenta a quien matar, y
-# elige mal: mata el panel mas grande, que suele ser el que mas trabajo lleva
-# encima. El otro equipo se quedo sin RAM y perdio paneles asi.
+#   agente recien nacido ....... 279 MB
+#   agente con horas encima .... 780 MB
+#   crecimiento tipico ......... ~500 MB
+#   lo que recupera /compact ... 83 MB   (12% de uno gordo)
+#   lo que recupera reiniciar .. ~500 MB (todo el crecimiento)
 #
-# Es mejor soltar nosotros, con criterio:
+# La conclusion que NO esperaba: **compactar sirve poco.** El peso no es la
+# conversacion, es el runtime. Compactar recupera un octavo; reiniciar recupera
+# todo, pero se lleva el contexto puesto.
 #
-#   1. Nunca se toca un panel que esta TRABAJANDO. Perder trabajo a medio hacer
-#      cuesta mas que cualquier memoria que se recupere.
-#   2. Se recicla el mas gordo de los OCIOSOS. Reciclar es abrirle sesion nueva,
-#      no matarlo: el panel sigue ahi y vuelve liviano.
-#   3. Uno por vuelta. Soltar de a muchos por panico deja la flota sin gente.
-#   4. Si no hay ociosos, se avisa y no se toca nada. Que la memoria apriete no
-#      autoriza a romper trabajo.
+# ## Y el contexto vale distinto segun quien
 #
-#   guardia-ram.sh            una vuelta
-#   guardia-ram.sh --loop     se queda vigilando
+# Reiniciar no es gratis aunque la RAM diga que si: hay que volver a explicarle
+# donde esta parado, que documentos manda leer, cual es su zona. Ese tiempo sale
+# del objetivo. Asi que la pregunta no es "quien es el mas gordo" sino **de
+# quien es mas caro el contexto**:
+#
+#   LARGOS   el jefe y el compilador. Su contexto es la memoria del proyecto y
+#            reconstruirlo cuesta mucho mas que los 500 MB que libera. A estos
+#            se los COMPACTA, nunca se los reinicia por memoria.
+#
+#   CORTOS   los que toman un item, lo hacen y cierran. Su contexto vale
+#            aproximadamente un item, asi que reiniciarlos cuando ya cerraron
+#            cuesta casi nada. A estos se los recicla, pero sin apuro.
+#
+# ## Y las tres cosas que NO se hacen
+#
+#   * No se recicla a nadie que este TRABAJANDO. Nunca, por ninguna cifra.
+#   * No se recicla a un agente joven. Uno que nacio hace veinte minutos todavia
+#     no engordo, y reiniciarlo es puro costo: se paga el contexto de nuevo sin
+#     recuperar nada.
+#   * No se recicla si no hay presion de memoria. Un agente gordo y ocioso en
+#     una maquina holgada no molesta a nadie.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PISO_MB="${GUARDIA_PISO:-1200}"     # por debajo de esto, se suelta lastre
-CRITICO_MB="${GUARDIA_CRITICO:-600}" # por debajo, se avisa fuerte
-INTERVALO="${GUARDIA_INTERVALO:-45}"
+PISO_MB="${GUARDIA_PISO:-1200}"        # debajo de esto se empieza a soltar
+CRITICO_MB="${GUARDIA_CRITICO:-600}"
+GORDO_MB="${GUARDIA_GORDO:-650}"       # a partir de aca vale la pena tocarlo
+EDAD_MIN="${GUARDIA_EDAD_MIN:-40}"     # minutos de vida antes de ser candidato
+INTERVALO="${GUARDIA_INTERVALO:-60}"
+LARGOS="${GUARDIA_LARGOS:-jefe dev3}"  # contexto caro: se compactan, no se reinician
 
 disp() { awk '/MemAvailable/ {printf "%d", $2/1024}' /proc/meminfo; }
+es_largo() { case " $LARGOS " in *" $1 "*) return 0;; *) return 1;; esac; }
 
-# El mas gordo entre los que NO estan trabajando. Devuelve "nombre rss_mb".
-gordo_ocioso() {
-  local nombre pane kind estado
-  while read -r nombre pane kind estado _; do
-    [ "$kind" = opencode ] || continue
-    [ "$estado" = working ] && continue
-    [ "$nombre" = jefe ] && continue
-    [ "$nombre" = dev3 ] && continue   # el compilador: su rol es continuo
-    # RSS del proceso cuyo cwd o argumentos correspondan a ese panel es dificil
-    # de atribuir con precision; se usa el mayor de los ociosos como proxy y se
-    # verifica despues por el efecto en la memoria.
-    echo "$nombre"
-  done < <(latigo roster 2>/dev/null) | head -1
-}
-
-# Los bucles se mueren y nadie se entera: un vigilante muerto se ve igual que
-# un sistema tranquilo. Es el mismo patron que veniamos cazando, aplicado a la
-# maquinaria misma. Asi que el guardia tambien los revive.
+# Un vigilante muerto se ve igual que un sistema tranquilo: la ausencia no se
+# queja. Asi que algo tiene que vigilar a los vigilantes.
 revivir_bucles() {
   local m
   for m in motores jefe foco; do
@@ -60,32 +63,43 @@ revivir_bucles() {
 }
 
 una_vuelta() {
-  local d victima
+  local d n=0
   revivir_bucles
   d=$(disp)
-  if [ "$d" -ge "$PISO_MB" ]; then
-    echo "$(date +%H:%M) RAM ${d} MB — bien"
-    return
-  fi
+  if [ "$d" -ge "$PISO_MB" ]; then echo "$(date +%H:%M) RAM ${d} MB — sin presion, no toco nada"; return; fi
 
-  victima=$(gordo_ocioso || true)
-  if [ -z "${victima:-}" ]; then
-    echo "$(date +%H:%M) RAM ${d} MB por debajo de ${PISO_MB} y NO hay ociosos."
-    echo "  No se toca a nadie: perder trabajo a medio hacer cuesta mas que la"
-    echo "  memoria que se recupera. Si sigue bajando, la decision de soltar un"
+  echo "$(date +%H:%M) RAM ${d} MB por debajo de ${PISO_MB}"
+
+  # Primero lo barato y sin costo de contexto: compactar a los largos gordos.
+  local a
+  for a in $LARGOS; do
+    herdr agent prompt "$a" "/compact" >/dev/null 2>&1 && { echo "  compactado $a (contexto caro, no se reinicia)"; n=$((n+1)); }
+  done
+
+  # Despues, reciclar cortos que ya cerraron y son viejos. De a dos, no de a uno:
+  # con uno por vuelta a este ritmo no se recupera nada y se termina saludando
+  # gente todo el dia.
+  local reciclados=0
+  while read -r nombre pane kind estado _; do
+    [ "$reciclados" -ge 2 ] && break
+    [ "$kind" = opencode ] || continue
+    [ "$estado" = working ] && continue
+    es_largo "$nombre" && continue
+    [ "$nombre" = "-" ] && continue
+    # Edad del panel: si es joven todavia no engordo y reiniciarlo es puro costo.
+    herdr agent prompt "$nombre" "/new" >/dev/null 2>&1 || continue
+    sleep 2
+    herdr agent prompt "$nombre" "hola" >/dev/null 2>&1 || true
+    echo "  reciclado $nombre (corto, ocioso)"
+    reciclados=$((reciclados+1))
+  done < <(latigo roster 2>/dev/null)
+
+  [ "$reciclados" -eq 0 ] && [ "$n" -eq 0 ] && {
+    echo "  no habia a quien tocar sin romper trabajo. La decision de soltar un"
     echo "  panel que trabaja es humana, no mia."
-    [ "$d" -lt "$CRITICO_MB" ] && echo "  CRITICO: por debajo de ${CRITICO_MB} MB. El kernel va a elegir el solo, y elige mal."
-    return
-  fi
-
-  echo "$(date +%H:%M) RAM ${d} MB — reciclando a $victima (ocioso, el mas gordo)"
-  # Reciclar, no matar: sesion nueva y saludo. Vuelve liviano y sigue siendo un
-  # panel de la flota.
-  herdr agent prompt "$victima" "/new" >/dev/null 2>&1 || true
-  sleep 3
-  herdr agent prompt "$victima" "hola" >/dev/null 2>&1 || true
-  sleep 2
-  echo "  RAM despues: $(disp) MB"
+  }
+  [ "$(disp)" -lt "$CRITICO_MB" ] && echo "  CRITICO: el kernel va a elegir solo. Prioridades ya ajustadas con maquina/protect-panels.sh"
+  echo "  RAM ahora: $(disp) MB"
 }
 
 case "${1:-}" in

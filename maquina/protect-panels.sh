@@ -44,7 +44,24 @@ ajustar() {
     printf '%-38s adj=%-6s ajustados=%d\n' "$patron" "$valor" "$n"
 }
 
-ajustar '^opencode'                    -100
-ajustar 'herdr'                        -200
-ajustar '^(rustc|cc1|cc1plus|ld|lld)$'  500
-ajustar 'rust-analyzer'                 400
+# El orden importa y sale de una pregunta: si la maquina tiene que perder algo,
+# QUE conviene perder. Un rustc muerto cuesta un `cargo check`. Un panel muerto
+# cuesta la sesion, su contexto y lo que no haya commiteado. La sesion de
+# control muerta cuesta la flota entera.
+#
+# Nota sobre la interfaz grafica: en esta maquina no hay ninguna corriendo, asi
+# que no hay nada que sacrificar ahi. Donde la haya, el escritorio va PRIMERO a
+# la lista de sacrificables: se puede volver a abrir, una sesion de trabajo no.
+
+# ── Protegidos, de mas a menos ──────────────────────────────────────────
+ajustar 'herdr'                        -300   # el plano de control: sin el no hay flota
+ajustar '^claude'                      -200   # las sesiones que conducen
+ajustar '^opencode'                    -100   # el trabajo
+ajustar 'motores.sh|jefe.sh|foco.sh|guardia-ram.sh'  -100   # la maquinaria que lo sostiene
+
+# ── Sacrificables, de mas a menos ───────────────────────────────────────
+ajustar 'gnome-shell|plasmashell|Xorg|kwin_|mutter'   800   # el escritorio, si lo hay
+ajustar 'firefox|chrome|chromium'                     700
+ajustar '^(rustc|cc1|cc1plus|ld|lld)$'                500   # transitorios y rehacibles
+ajustar 'rust-analyzer'                               400
+ajustar 'pipewire|wireplumber|pulseaudio'             300   # audio: nadie lo esta escuchando
