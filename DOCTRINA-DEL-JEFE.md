@@ -182,6 +182,33 @@ Corolario para el que escribe una medición nueva: **antes de confiar en un
 número, rompelo a propósito y mirá qué imprime.** Si imprime lo mismo que
 cuando anda, todavía no está terminado.
 
+### El límite del remedio
+
+Poner el control no alcanza si el control comparte el sensor. La segunda regla,
+que costó dos intentos fallidos descubrir:
+
+> **Un instrumento no puede auditarse con el sensor que se le rompió.**
+
+Un detector que medía con git y se controlaba con git nunca se disparó: cuando
+git devolvía cero, el control comparaba contra ese mismo cero y salió a acusar a
+quince paneles que estaban trabajando. Los dos sensores tienen que **fallar por
+motivos que no se solapan** — la huella de pantalla se rompe si el terminal no
+contesta, los commits se rompen si no hay repo. Que sean independientes no es
+elegancia: es la condición para que el autocontrol sirva de algo.
+
+### Y "no veo nada" nunca es "todo bien"
+
+El tercer estado es obligatorio. Un detector con dos salidas —hay problema / no
+hay problema— informa exactamente lo mismo cuando está ciego que cuando el mundo
+está sano, y **la respuesta tranquilizadora es la peligrosa**. Toda medición
+tiene tres finales:
+
+```
+HAY PROBLEMA      actuá
+NO HAY PROBLEMA   seguí
+NO PUEDO MEDIR    arreglá el instrumento, y no le creas a nada de lo anterior
+```
+
 ## Archivos que hacen que esto se cumpla
 
 | archivo | qué garantiza |

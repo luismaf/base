@@ -91,14 +91,34 @@ for a in d.get("result", {}).get("agents", []):
 
 item_de() { awk -F'\t' -v p="$1" '$1=="tomado" && $5==p {print $2"\t"$6; exit}' "$ROOT/.logs/tablero.tsv" 2>/dev/null; }
 
+# ── TRES ESTADOS, NO DOS ───────────────────────────────────────────────────
+#
+# La primera version tenia dos salidas: "hay teatro" y "no hay teatro". Con eso,
+# `herdr agent list` cayendose —cero paneles vistos— imprimia exactamente lo
+# mismo que una flota sana: "0 paneles con sospecha". **No ver nada se veia
+# igual que un mundo sano**, que es el mismo bug que este script existe para
+# cazar, cometido por el script.
+#
+# Ahora hay tres: HAY TEATRO, NO HAY TEATRO, y NO PUEDO MEDIR. El tercero no
+# tranquiliza a nadie.
 ahora=$(date +%s)
 # Cuánto produjo el repo entero en la ventana. Si esto es cero, el problema no
 # es un panel: es que a nadie le llega trabajo, y eso lo arregla nunca-ocioso.
 commits=$(git -C "$ROOT" log --since="$((VENTANA / 60)) minutes ago" --oneline 2>/dev/null | wc -l)
 registrar "$(basename "$ROOT"): $commits commits en los ultimos $((VENTANA / 60)) min"
 
+# Se toma la lista UNA vez: contarla despues, por separado, es darle al control
+# la chance de ver un mundo distinto del que vio la deteccion.
+lista_ocupados="$(ocupados)"
+ocupados_n=$(printf '%s\n' "$lista_ocupados" | grep -c .)
+
+if [ "$ocupados_n" -eq 0 ]; then
+  registrar "$(basename "$ROOT"): NO PUEDO MEDIR — no veo un solo panel ocupado en este repo. O no hay ninguno, o herdr no esta contestando. NO es lo mismo que 'todo bien'."
+  exit 3
+fi
+
 sospechosos=0
-for p in $(ocupados); do
+for p in $lista_ocupados; do
   h="$(huella_de "$p")"
   [ -z "$h" ] && continue
   f="$HUELLAS/$p"
@@ -145,7 +165,19 @@ done
 # que el `find -newermt` de más arriba: un instrumento roto devuelve un valor
 # plausible, no un error. Un detector que no puede contradecirse a sí mismo no
 # es un detector, es una opinión — y ésta manda a rescatar gente que trabaja.
-ocupados_n=$(ocupados | grep -c .)
+#
+# ── Y EL CONTROL TIENE QUE USAR OTRO SENSOR ────────────────────────────────
+#
+# **Un instrumento no puede auditarse con el sensor que se le rompió.** El jefe
+# de munix probó su version de esto y volvió a fallar por eso exactamente: su
+# deteccion medía con git y su control también, así que cuando git devolvía
+# cero, el control comparaba contra ese mismo cero y nunca se disparaba.
+#
+# Acá los dos sensores fallan por motivos que no se solapan: la deteccion es la
+# HUELLA DE PANTALLA (se rompe si `herdr agent read` calla o si la barra de
+# estado deja de filtrarse) y el control son los COMMITS DE GIT (se rompen si no
+# hay repo o el rango esta mal). Que sean independientes no es elegancia: es la
+# condicion para que el autocontrol sirva de algo.
 # El umbral es la MAYORIA, no la unanimidad. Pedir que esten marcados los 24
 # de 24 deja pasar el caso real: 14 de 24 marcados mientras el repo mete 23
 # commits ya es imposible, y ese es el numero que dio la primera prueba con el
