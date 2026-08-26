@@ -100,8 +100,30 @@ peldano_recarga() {
 # No son tareas de relleno: cada una manda a MEDIR algo del negocio y a actuar
 # sobre lo peor que encuentre. Un panel que cierra una de éstas deja el
 # producto mejor vendido, no el tablero más lleno.
+#
+# ── PERO DOS DE LAS CINCO ESTÁN BAJO LLAVE ─────────────────────────────────
+#
+# Mirar a la competencia y pensar cómo se vende vale mucho, y es también la
+# forma más fácil de no terminar nunca: investigar es cómodo, se siente
+# productivo, no tiene final claro y no lo audita nadie. Un equipo que estudia
+# competidores con el producto a medio hacer no está mejorando, se está
+# escapando de terminar. Era un agujero de este script: las cinco preguntas
+# salían siempre, incluso con el objetivo sin lograr.
+#
+# No se arregla pidiendo disciplina —la disciplina se gasta y nadie se da
+# cuenta de cuándo se gastó—. Se arregla con una COMPUERTA que se mide sola:
+# `objetivo.sh` lee condiciones numéricas y dice ABIERTA o CERRADA. Sin
+# condiciones configuradas dice CERRADA, que es el default correcto: quien no
+# escribió cuándo termina, no terminó.
+#
+#   CONVERGEN (siempre)  lo que está flojo, qué le hace perder tiempo al
+#                        usuario, qué deuda nos frena. Todo esto ACERCA al
+#                        objetivo.
+#   EXPLORAN  (con llave) qué se puede cobrar, qué le falta para ganarle al de
+#                        al lado. Esto ABRE frentes, y abre frentes bien.
 peldano_negocio() {
-  local n=0
+  local n=0 puerta="CERRADA"
+  [ -x "$DIR/objetivo.sh" ] && puerta="$( cd "$REPO" && bash "$DIR/objetivo.sh" --puerta 2>/dev/null || echo CERRADA )"
   agregar_si_falta() {
     ya_esta "$1" && return 0
     agregar "$1" "$2"; n=$((n+1))
@@ -117,6 +139,7 @@ Como medirla, en este orden:
 Elegi UNA sola, la peor, y arreglala entera. Al cerrar decí que mediste, que elegiste y por que.
 NO agregues una funcionalidad nueva en este item. Este item es dejar bien lo que ya existe."
 
+  if [ "$puerta" = "ABIERTA" ]; then
   agregar_si_falta \
     "NEGOCIO-PLATA ($NOMBRE): que se puede cobrar de lo que ya tenemos casi hecho" \
 "Pensa como el dueno de la empresa, no como programador.
@@ -142,6 +165,8 @@ Si no la tiene, armala para el area que mejor conozcas.
 Elegi UNA celda en rojo, hacela verde de verdad (no en el documento: en el producto) y actualizá la matriz.
 Al cerrar decí que celda era y como se demuestra que ahora esta."
 
+  fi   # cierra la compuerta: PLATA y VENTA sólo con el objetivo logrado
+
   agregar_si_falta \
     "NEGOCIO-VELOCIDAD ($NOMBRE): la deuda que nos frena todos los dias" \
 "La deuda que frena a los que trabajan es mas cara que la que molesta al usuario, porque se paga todos los dias.
@@ -149,6 +174,7 @@ Buscá que nos hace lentos: el build, un script que hay que correr a mano, un pa
 un archivo gigante que todos tienen que tocar, una parte del codigo donde siempre se rompe lo mismo.
 Elegi UNA y arreglala para siempre. Al cerrar decí cuanto tiempo se ahorra por vuelta y cuantas vueltas hay por dia."
 
+  [ "$puerta" = "ABIERTA" ] || registrar "$NOMBRE: puerta CERRADA — PLATA y VENTA quedan bajo llave hasta lograr el objetivo"
   [ "$n" -gt 0 ]
 }
 
