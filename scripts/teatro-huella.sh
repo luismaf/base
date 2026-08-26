@@ -110,7 +110,10 @@ registrar "$(basename "$ROOT"): $commits commits en los ultimos $((VENTANA / 60)
 # Se toma la lista UNA vez: contarla despues, por separado, es darle al control
 # la chance de ver un mundo distinto del que vio la deteccion.
 lista_ocupados="$(ocupados)"
-ocupados_n=$(printf '%s\n' "$lista_ocupados" | grep -c .)
+# `grep -c` con la lista vacia imprime 0 y devuelve 1: la respuesta correcta
+# por stdout y un fallo por el codigo de salida. Con pipefail eso mata el
+# script justo cuando no hay nadie ocupado — el caso mas normal del mundo.
+ocupados_n=$(printf '%s\n' "$lista_ocupados" | grep -c . || true)
 
 if [ "$ocupados_n" -eq 0 ]; then
   registrar "$(basename "$ROOT"): NO PUEDO MEDIR — no veo un solo panel ocupado en este repo. O no hay ninguno, o herdr no esta contestando. NO es lo mismo que 'todo bien'."

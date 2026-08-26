@@ -596,3 +596,31 @@ que falla es un bug, no un incordio.
 > [DOCTRINA-DEL-JEFE.md](DOCTRINA-DEL-JEFE.md). Los scripts
 > `poblar-flota.sh` y `nunca-ocioso.sh` son el músculo que hace que se cumpla
 > sin depender de que alguien se acuerde.
+
+## grep dentro de `$( )` con `set -euo pipefail` mata el bucle
+
+`x=$(cmd | grep ...)` no es una lectura: es una bomba con temporizador puesto
+en el caso "no encontro nada". grep devuelve 1 cuando no hay coincidencias,
+`pipefail` lo propaga y `set -e` mata el script entero. Y `grep -c` es peor
+todavia — imprime `0` por stdout, que es la respuesta correcta, y devuelve 1
+igual.
+
+Lo caro no es el error: es **cuando** se dispara. El bucle de la flota moria
+en `grep -oE 'WHIP …'` exactamente cuando no habia latigazos que dar, o sea
+cuando el tablero estaba vacio — justo el momento en que mas falta hacia que
+siguiera vivo para barrer al llegar trabajo nuevo. Y como corria bajo systemd
+con `Restart=always`, el suicidio se disfrazaba de `activating`: el servicio
+figuraba arrancando, no caido. Trece obreros parados cuatro horas.
+
+Es el patron de siempre en su forma de sistema: **un componente que al fallar
+devuelve algo plausible en vez de un error, y siempre disfrazado de la buena
+noticia** — aca, "el servicio esta arrancando".
+
+Regla: toda sustitucion que termine en `grep`, `head`, `cut` o `tr` lleva
+`|| true` (o `|| echo <valor neutro>`) pegado. No es defensivo de mas: es que
+el shell no distingue "no habia nada que contar" de "se rompio".
+
+Y el corolario para systemd: `Restart=always` no prueba que algo funcione.
+Antes de darlo por vivo, `systemctl --user is-active` tiene que decir `active`
+y no `activating`, y conviene mirar el uptime — un servicio que se reinicia
+cada 15 segundos esta muerto, solo que ruidosamente.
