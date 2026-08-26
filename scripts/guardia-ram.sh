@@ -46,6 +46,8 @@ GORDO_MB="${GUARDIA_GORDO:-650}"       # a partir de aca vale la pena tocarlo
 EDAD_MIN="${GUARDIA_EDAD_MIN:-40}"     # minutos de vida antes de ser candidato
 INTERVALO="${GUARDIA_INTERVALO:-60}"
 CTX_COMPACTAR="${GUARDIA_CTX:-5000}"   # decimas de K: 500.0K. Compactar cuesta, se hace tarde
+CTX_RESIDUO_K="${GUARDIA_RESIDUO:-250}" # K por encima de los cuales, con varios items cerrados, es acumulacion
+ITEMS_VARIOS="${GUARDIA_ITEMS:-3}"      # a partir de cuantos items cerrados se considera residuo
 RESERVA_COMPILAR="${GUARDIA_RESERVA:-2500}"  # MB que rustc necesita para no morir
 # Quien tiene contexto CARO de reconstruir. Solo el jefe: el suyo es la memoria
 # del proyecto — que se escribio, que se probo, que decidio y por que.
@@ -84,7 +86,7 @@ una_vuelta() {
   # que la enfermedad, porque ademas recupera apenas 83 MB.
   local a ctx
   for a in $LARGOS; do
-    ctx=$(herdr agent read "$a" --source visible 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?K' | tail -1 | tr -d 'K.')
+    ctx=$(herdr agent read "$a" --source visible 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?K' | tail -1 | tr -d 'K.' || true)
     [ -z "${ctx:-}" ] && continue
     if [ "${ctx%%[!0-9]*}" -ge "$CTX_COMPACTAR" ]; then
       herdr agent prompt "$a" "/compact" >/dev/null 2>&1 && { echo "  compactado $a (contexto ${ctx}, por encima del umbral)"; n=$((n+1)); }
@@ -96,13 +98,14 @@ una_vuelta() {
   # Despues, reciclar cortos que ya cerraron y son viejos. De a dos, no de a uno:
   # con uno por vuelta a este ritmo no se recupera nada y se termina saludando
   # gente todo el dia.
-  local reciclados=0
+  local reciclados=0 ctx cerrados
+
   while read -r nombre pane kind estado _; do
-    [ "$reciclados" -ge 2 ] && break
+    if [ "$reciclados" -ge 2 ]; then break; fi
     [ "$kind" = opencode ] || continue
-    [ "$estado" = working ] && continue
-    es_largo "$nombre" && continue
-    [ "$nombre" = "-" ] && continue
+    if [ "$estado" = working ]; then continue; fi
+    if es_largo "$nombre"; then continue; fi
+    if [ "$nombre" = "-" ]; then continue; fi
 
     # LA REGLA DE EDAD, que antes estaba escrita en un comentario y no existia
     # en el codigo. Un rato mirandola alcanzo para ver que EDAD_MIN aparecia una
@@ -113,11 +116,37 @@ una_vuelta() {
     # Un agente joven todavia no engordo, asi que reciclarlo es puro costo: se
     # paga el contexto de nuevo sin recuperar memoria. Se lo deja trabajar sus
     # 40 minutos primero.
-    ctx=$(herdr agent read "$nombre" --source visible 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?K' | tail -1 | tr -d 'K.')
-    if [ -n "${ctx:-}" ] && [ "${ctx%%[!0-9]*}" -lt 2000 ]; then
-      echo "  $nombre todavia esta liviano (${ctx}) — lo dejo trabajar"
+    # ── La señal no es el tamaño del contexto: es el contexto POR ITEM ──────
+    #
+    # Un panel con 828K puede ser dos cosas opuestas y hay que distinguirlas,
+    # porque el tratamiento es contrario:
+    #
+    #   cerro 53 items y tiene 828K  -> residuo de 53 trabajos aislados. Se
+    #                                   recicla: nada de eso le sirve para el
+    #                                   proximo.
+    #   cerro 0 items y tiene 828K   -> esta peleando UNA cosa dificil que
+    #                                   necesita ese contexto. Reciclarlo es
+    #                                   condenarlo a empezar de cero para
+    #                                   siempre: un bucle infinito de no
+    #                                   resolver nunca ese item.
+    #
+    # El segundo caso es el peligroso, porque desde afuera se ve igual que el
+    # primero — y matarlo se siente prudente mientras garantiza el fracaso.
+    ctx=$(herdr agent read "$nombre" --source visible 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?K' | tail -1 | tr -d 'K.' || true)
+    ctx=${ctx%%[!0-9]*}
+    cerrados=$(awk -F'\t' -v p="$pane" -v n="$nombre" '$1=="done" && ($5==p||$5==n)' .latigo/board.tsv 2>/dev/null | wc -l)
+
+    if [ -z "${ctx:-}" ]; then echo "  $nombre: no pude leer su contexto, no lo toco"; continue; fi
+
+    if [ "$cerrados" -lt "$ITEMS_VARIOS" ] && [ "$ctx" -gt $((CTX_RESIDUO_K*10)) ]; then
+      echo "  $nombre tiene ${ctx} con solo $cerrados items cerrados — esta peleando algo dificil, NO lo toco"
       continue
     fi
+    if [ "$ctx" -lt $((CTX_RESIDUO_K*10)) ]; then
+      echo "  $nombre liviano (${ctx}, $cerrados items) — lo dejo trabajar"
+      continue
+    fi
+    echo "  $nombre: ${ctx} acumulado en $cerrados items cerrados — es residuo"
 
     herdr agent prompt "$nombre" "/new" >/dev/null 2>&1 || continue
     sleep 2
@@ -134,6 +163,20 @@ una_vuelta() {
   echo "  RAM ahora: $(disp) MB"
 }
 
+# NOTA sobre `set -euo pipefail` y un grep que no encuentra nada:
+# `x=$(cmd | grep ... )` con pipefail devuelve 1 cuando el grep no matchea, y
+# `set -e` mata el script en esa linea sin decir una palabra. Le paso a este
+# mismo bucle: un panel cuya barra de estado no mostraba el contexto lo mataba
+# entero, y desde afuera se veia como "no hay a quien reciclar". Toda lectura
+# que puede no encontrar nada lleva `|| true` y despues se chequea si vino
+# vacia. Tercera vez esta noche que una falla se disfraza de la respuesta buena.
+
+# NOTA sobre `[ cond ] && accion` dentro de un bucle con `set -e`:
+# cuando la condicion es falsa la linea entera devuelve 1 y `set -e` mata la
+# funcion ahi mismo, sin decir nada. La primera version de este bucle salia en
+# la primera vuelta y parecia "no hay a quien reciclar". Otra vez lo mismo: una
+# falla que se disfraza de la respuesta buena. Dentro de bucles va `if`.
+
 # ── Hacer lugar para compilar ───────────────────────────────────────────────
 #
 # rustc necesita del orden de 2.5 GB para este workspace. Con la flota llena no
@@ -141,9 +184,17 @@ una_vuelta() {
 # compuerta del objetivo no puede medir si el codigo esta sano. Un recurso que
 # nunca esta disponible no es un recurso: es un bloqueo permanente.
 #
-# Asi que se hace lugar A PROPOSITO y por un rato: se reciclan ociosos hasta
-# llegar a la reserva, se compila, y la flota se vuelve a llenar sola porque los
-# paneles siguen ahi.
+# ## Pero esto es el ULTIMO recurso, no el primero
+#
+# El lugar para compilar se aparta al abrir la flota (ver poblar-flota.sh), que
+# es cuando cuesta un obrero menos y nada mas. Sacar gente a la fuerza cuando ya
+# estan todos trabajando es el peor momento y el mas caro, y ademas es incierto:
+# una compilacion grande puede pedir casi toda la maquina y no se sabe cuanto
+# hasta que corre.
+#
+# Asi que esto NO se dispara solo. Se llama a pedido, o cuando hay varios
+# obreros trabados esperando compilar — o sea cuando el bloqueo ya es peor que
+# la interrupcion. Mientras se pueda avanzar, se avanza.
 hacer_lugar() {
   local objetivo="${1:-$RESERVA_COMPILAR}" d n=0
   d=$(disp)

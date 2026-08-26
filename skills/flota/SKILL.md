@@ -168,6 +168,29 @@ es más caro el contexto**:
 Y de a dos por vuelta, no de a uno: con uno solo a este ritmo no se recupera
 nada y se termina saludando gente todo el día.
 
+### El lugar para compilar se aparta al abrir, no se pelea después
+
+Una compilación grande puede pedir **casi toda la memoria de la máquina**, y
+cuánto pide es incierto: depende del proyecto, de cuántas unidades compilen en
+paralelo y de qué tan lejos esté el enlazado.
+
+Si se llena la máquina de obreros y después se intenta hacer lugar, hay que
+sacar gente **justo cuando todos están trabajando** — el peor momento y el más
+caro. Es mucho más barato **no ocupar ese espacio nunca**: se aparta al abrir la
+flota, junto con el colchón del sistema, y la flota nace más chica a propósito.
+
+Un obrero menos cuesta poco. Un build que no puede correr bloquea la única
+medición que dice si el código está sano, y eso bloquea el objetivo entero — un
+recurso que nunca está disponible no es un recurso, es un bloqueo permanente.
+
+Sacar gente a la fuerza queda como **último recurso**: a pedido, o cuando ya hay
+varios obreros trabados esperando compilar, o sea cuando el bloqueo es peor que
+la interrupción. **Mientras se pueda avanzar, se avanza.**
+
+Y la reserva se **mide, no se adivina**: una reserva de más cuesta obreros para
+siempre, una de menos cuesta un build que no corre. El número sale de medir el
+pico real de una compilación, no de estimarlo.
+
 ### Que el kernel mate lo que se puede volver a abrir
 
 Cuando la memoria se acaba el kernel elige, y elige mal: mata el proceso más
