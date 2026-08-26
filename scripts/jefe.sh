@@ -39,7 +39,8 @@ RAIZ="$(cd "$DIR/.." && pwd)"
 . "$DIR/harness.sh"
 TABLERO="$DIR/tablero.sh"
 JEFE="${JEFE_PANEL:-jefe}"
-ESTADO="$RAIZ/.tablero/jefe.escalon"
+# El estado vive con el resto del mecanismo, en .logs/.
+ESTADO="$RAIZ/.logs/jefe.escalon"
 INTERVALO="${JEFE_INTERVALO:-180}"
 UMBRAL_RAM_MB="${JEFE_RAM_MIN:-1500}"
 
@@ -74,6 +75,11 @@ siguiente_escalon() {
 }
 
 obreros() { harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '$1!=j && ($4=="obrero"||$4=="agente")' | wc -l; }
+
+# El panel del jefe existe de verdad, o no se le habla. docs/jefe.md envejece:
+# los ids cambian cada vez que se recrea un panel, y hablarle a un id muerto es
+# la forma silenciosa de que la escalera no suba nunca.
+jefe_vivo() { harness_list 2>/dev/null | cut -f1 | grep -qx "$JEFE"; }
 ram_mb()  { awk '/MemAvailable/ {printf "%d", $2/1024}' /proc/meminfo; }
 
 una_vuelta() {
@@ -83,6 +89,21 @@ una_vuelta() {
   ram=$(ram_mb)
 
   if [ "$pend" -lt "$n" ]; then
+    # ── PRIMERO LA MAQUINA, DESPUES EL CARO ────────────────────────────────
+    # La regla de la casa es que si algo lo puede hacer un obrero lo hace un
+    # obrero; aca se estira un escalon mas: si lo puede hacer un SCRIPT, lo
+    # hace un script. nunca-ocioso.sh repone sin redaccion y sin un token.
+    # Al jefe se lo despierta solo si despues de eso el tablero sigue corto,
+    # que es cuando de verdad falta criterio y no manos.
+    if [ -x "$DIR/nunca-ocioso.sh" ]; then
+      MINIMO="$n" bash "$DIR/nunca-ocioso.sh" >/dev/null 2>&1 || true
+      pend=$("$TABLERO" count 2>/dev/null || echo 0)
+      if [ "$pend" -ge "$n" ]; then
+        echo "$(date +%H:%M) repuesto por la escalera, sin molestar al jefe: pend=$pend"
+        return
+      fi
+    fi
+    jefe_vivo || { echo "$(date +%H:%M) reponer: pend=$pend<$n y el panel del jefe ($JEFE) no existe"; return; }
     harness_prompt "$JEFE" "El tablero tiene $pend pendientes y hay $n obreros. Esta por debajo, y eso significa paneles apagandose.
 
 Reponelo AHORA hasta pasar los $n. No inventes trabajo: sacalo de las fuentes que el proyecto ya tiene, en orden, y la primera que tenga entradas gana. El inventario de lo que falta, el marcador de huecos, los informes de cierre de los obreros (donde dice que les falto) y las specs.
@@ -101,6 +122,22 @@ Una zona exclusiva por item, en rutas. El contexto completo adentro del item: el
   i=$(siguiente_escalon)
   titulo="${ESCALONES[$i]%%|*}"
   cuerpo="${ESCALONES[$i]#*|}"
+  # ── SIN PANEL DE JEFE, EL ESCALON NO SE PIERDE: SE VUELVE ITEM ─────────
+  # Cuando el jefe es una sesion de terminal y no un panel de la flota, no hay
+  # a quien mandarle el prompt. Dejar caer el escalon seria apagar la escalera
+  # justo cuando el tablero esta sano. El escalon entra al tablero y lo agarra
+  # un obrero, que ademas es mas barato que despertar al jefe.
+  if ! jefe_vivo; then
+    printf '%s\n' "$cuerpo
+
+Esto no es relleno ni es opcional: el producto nunca esta terminado. Si este escalon esta genuinamente limpio, decilo en una linea y cerra el item — decir 'esto esta bien' es una respuesta correcta; inventar trabajo no.
+Cada desvio o hueco que encuentres va como ITEM NUEVO al tablero: bash scripts/tablero.sh add \"...\". Al cerrar deci cuantos escribiste." \
+      | "$TABLERO" add "ESCALON-$titulo: subir un escalon de la escalera de mejora" >/dev/null 2>&1 || true
+    echo "$(date +%H:%M) escalon $titulo -> al tablero (sin panel de jefe)"
+    [ "$ram" -lt "$UMBRAL_RAM_MB" ] && echo "$(date +%H:%M) AVISO: RAM disponible ${ram} MB, por debajo de ${UMBRAL_RAM_MB}"
+    return 0
+  fi
+
   harness_prompt "$JEFE" "El tablero esta con $pend pendientes para $n obreros, asi que no hay urgencia de reponer. Turno de mejorar: **$titulo**.
 
 $cuerpo
