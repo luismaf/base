@@ -51,8 +51,11 @@ COLAS_CONF="$REPO/scripts/colas.conf"
 LOG="${AUTOPILOTO_LOG:-$HOME/.logs-vigilante/autopiloto.log}"
 mkdir -p "$REPO/.tmp" "$(dirname "$LOG")"
 
-GRACIA="${AUTOPILOTO_GRACIA:-10}"
-ESPERA="${AUTOPILOTO_ESPERA:-45}"
+# Válvulas en cero: los obreros son gratis e ilimitados y no hay a quién
+# acosar. Ver la nota larga en latigo.sh. El anti-acoso que sí importa es el
+# tope de intentos del tablero, que protege al ítem y no al panel.
+GRACIA="${AUTOPILOTO_GRACIA:-0}"
+ESPERA="${AUTOPILOTO_ESPERA:-0}"
 # Enfriamiento aparte para los paneles MANUALES cuando el ritual no arranca.
 # Hablarle a uno de esos le ROBA EL FOCO al dueño unos segundos: reintentar
 # cada 45 s le haría saltar la pantalla toda la tarde. Diez minutos es

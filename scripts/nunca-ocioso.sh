@@ -59,7 +59,22 @@ agregar() { # $1=titulo $2=cuerpo
 # Un ítem que ya está en el tablero no se vuelve a poner. Sin esto, cada vuelta
 # de la escalera duplica las mismas cinco preguntas y el tablero se convierte
 # en un eco.
-ya_esta() { grep -qP "^(pendiente|tomado)\t[^\t]*\t[^\t]*\t[^\t]*\t[^\t]*\t\Q$1\E" "$TSV" 2>/dev/null; }
+#
+# ── POR QUÉ EL TÍTULO SE COMPARA ENTERO Y NO POR PREFIJO ───────────────────
+#
+# Detectar "esto ya está cubierto" por substring es una trampa que ya costó
+# cara: el generador de ítems del jefe de munix buscaba `F-nnn` dentro del
+# texto, y varios ítems mencionan RANGOS ("F-124 a F-128"). Un solo ítem con un
+# rango amplio daba por cubierto medio inventario — el tablero quedaba vacío
+# con trece devs parados y el script informaba que no faltaba nada.
+#
+# Un match parcial que sale positivo de más no falla ruidosamente: apaga la
+# flota en silencio. Por eso se compara el CAMPO TÍTULO COMPLETO, con awk y
+# `==`, sin expresiones regulares que puedan interpretar algo del contenido.
+ya_esta() {
+  awk -F'\t' -v t="$1" '($1=="pendiente" || $1=="tomado") && $6==t {hallado=1; exit} END{exit !hallado}' \
+      "$TSV" 2>/dev/null
+}
 
 # ── Peldaño 2: recarga medible ─────────────────────────────────────────────
 #

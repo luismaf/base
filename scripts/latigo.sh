@@ -16,8 +16,8 @@
 #    the id-based and name-based exclusions rotted in the first place.
 #
 # 2. IT WHIPPED OTHER PROJECTS. No cwd filter, so panels working in
-#    /run/media/yo/A/rust/ux, /run/media/yo/A/rust/tuti and $HOME were handed
-#    items from the AGP board. autopiloto.sh learned this lesson months ago
+#    sibling repos and $HOME were handed
+#    items from the project board. autopiloto.sh learned this lesson months ago
 #    (see the note at the end of scripts/colas.conf); this script never did.
 #
 # 3. IT HANDED THE SAME ITEM TO EVERY PANEL. `next_item` read the FIRST
@@ -51,8 +51,23 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOG="$ROOT/.logs/latigo.log"
 STATE="$ROOT/.logs/latigo.state"
-COOLDOWN=${COOLDOWN:-900}   # seconds between whips to the same panel
+# ── LAS VÁLVULAS ESTABAN CALIBRADAS PARA OBREROS QUE SE PAGAN (2026-08-26) ──
+#
+# COOLDOWN era 900: un panel que cerraba su ítem en dos minutos esperaba
+# QUINCE para recibir el siguiente, con el tablero lleno al lado. Esa moderación
+# tiene sentido cuando cada prompt cuesta plata y hay una persona del otro lado
+# a la que se puede acosar. Con obreros ox alpha —gratis, ilimitados, sin
+# nadie a quien molestar— está exactamente al revés: un panel parado con
+# treinta ítems esperando no es prudencia, es desperdicio.
+#
+# El hallazgo es del jefe de munix, que tuvo tres paneles quietos con 31 ítems
+# en cola y los tres salieron en el mismo segundo al poner las válvulas en cero.
+#
+# El anti-acoso que SÍ hace falta no es este: es el tope de intentos de
+# `tablero.sh take`, que protege al ÍTEM de rebotar para siempre. Eso queda.
+COOLDOWN=${COOLDOWN:-0}     # seconds between whips to the same panel; 0 = sin freno
 INTERVAL=${INTERVAL:-120}   # sweep frequency
+VUELTAS=${VUELTAS:-6}       # barridos por pasada: uno solo no vacía la lista de libres
 touch "$STATE"
 
 # The supervisor loop invokes this as `latigo.sh --una`: one sweep, then exit.
@@ -61,6 +76,53 @@ touch "$STATE"
 # way to lose a claimed item between `take` and the prompt landing.
 ONCE=0
 [ "${1:-}" = "--una" ] && ONCE=1
+
+# ── EL FOCO ES DE LA PERSONA, NO DEL SISTEMA ───────────────────────────────
+#
+# Mandarle un mensaje a un panel a veces lo enfoca, y eso le roba la pantalla
+# al dueño aunque esté en otro workspace. Se anota quién tenía el foco antes de
+# barrer y se lo devuelve al terminar. Que la maquinaria ande no puede costarle
+# la pantalla al que la está usando.
+foco_actual() {
+  herdr agent list 2>/dev/null | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for a in d.get("result", {}).get("agents", []):
+    if a.get("focused"):
+        print(a.get("pane_id", "")); break
+' 2>/dev/null
+}
+
+# La regla fina, y es la que evita que el arreglo sea peor que el problema:
+# devolver el foco SIEMPRE es pelearselo a la persona que se movio a proposito.
+# Nuestra automatizacion solo enfoca paneles de obreros. Entonces:
+#   el foco quedo en un panel `opencode`  -> lo movimos nosotros, se devuelve
+#   el foco quedo en cualquier otra cosa  -> se movio la persona, NO SE TOCA
+foco_es_obrero() {
+  herdr agent list 2>/dev/null | PANE="${1:-}" python3 -c '
+import json, os, sys
+pane = os.environ.get("PANE", "")
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+for a in d.get("result", {}).get("agents", []):
+    if a.get("pane_id") == pane:
+        sys.exit(0 if a.get("agent") == "opencode" else 1)
+sys.exit(1)
+' 2>/dev/null
+}
+
+devolver_foco() {
+  [ -n "${1:-}" ] || return 0
+  local ahora; ahora="$(foco_actual)"
+  [ "$ahora" = "$1" ] && return 0
+  foco_es_obrero "$ahora" || return 0
+  herdr agent focus "$1" >/dev/null 2>&1 || true
+}
 
 last_whip() { awk -F'\t' -v p="$1" '$1==p{print $2}' "$STATE" 2>/dev/null | tail -1; }
 
@@ -85,7 +147,7 @@ adopted_list() {
 
 # Idle panels OF THIS REPO that are actual workers.
 # "Of this repo" means cwd == root OR listed in paneles-adoptados.conf: a panel
-# whose shell happened to start in /home/yo is still a worker, and before the
+# whose shell happened to start in the home directory is still a worker, and before the
 # adoption list it was skipped without ever appearing in the log.
 idle_workers() {
   herdr agent list 2>/dev/null | ROOT="$ROOT" ADOPTED="$(adopted_list | tr '\n' ' ')" python3 -c "
@@ -132,6 +194,16 @@ while true; do
         fi
     fi
     now=$(date +%s)
+    foco_previo="$(foco_actual)"
+
+    # ── UNA PASADA NO ALCANZA ──────────────────────────────────────────────
+    # `idle_workers` se lee una vez y se reparte a ésos. Los que quedaron
+    # libres a mitad del barrido —o los que se liberaron JUSTO cuando el
+    # barrido pasó por al lado— esperaban el próximo INTERVAL entero. Con
+    # obreros gratis eso son dos minutos de flota apagada por cada vuelta.
+    # Ahora se barre hasta que no quede nadie libre o se vacíe el tablero.
+    for vuelta in $(seq 1 "$VUELTAS"); do
+    repartidos=0
     for p in $(idle_workers); do
         [ -n "$p" ] || continue
         never_whip "$p" && continue
@@ -166,7 +238,7 @@ while true; do
         fi
 
         # An adopted panel's shell is NOT in the repo, so every relative path
-        # in the prompt below would resolve against /home/yo and quietly fail.
+        # in the prompt below would resolve against the home directory and quietly fail.
         preamble=""
         adopted "$p" && preamble="PRIMERO: cd $ROOT   (tu shell arranco en otro lado; todo lo de abajo es relativo a ese directorio)
 "
@@ -198,8 +270,15 @@ REGLA DEL DUENO: codigo y comentarios NUEVOS en INGLES (el espanol vive solo en 
 
         printf '%s\t%s\n' "$p" "$now" >> "$STATE"
         echo "$(date '+%F %T') LATIGAZO $p item=$id ${title:0:60}" >> "$LOG"
-        sleep 5
+        repartidos=$((repartidos + 1))
+        sleep 2
     done
+    # Nadie libre, o nada que repartir: la vuelta siguiente sería en vano.
+    [ "$repartidos" = "0" ] && break
+    [ "$(grep -cP '^pendiente\t' "$ROOT/.logs/tablero.tsv" 2>/dev/null)" = "0" ] && break
+    done
+
+    devolver_foco "$foco_previo"
     [ "$ONCE" = "1" ] && break
     sleep "$INTERVAL"
 done
