@@ -46,7 +46,7 @@ costo_por_obrero() {
   echo "$p90"
 }
 
-obreros_vivos() { harness_list 2>/dev/null | awk -F'\t' '$4=="obrero"' | wc -l; }
+obreros_vivos() { harness_list 2>/dev/null | awk -F'\t' '($4=="obrero"||$4=="agente")' | wc -l; }
 
 main() {
   local disp costo vivos cabe creados=0 restante

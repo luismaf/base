@@ -441,6 +441,18 @@ _custom_start() {
   eval "$HARNESS_START_CMD" "$(printf '%q %q' "$1" "$2")"
 }
 
+# ── La clase de panel: una sola palabra, y no cambiarla ────────────────
+#
+# CLASE DE PANEL. El cuarto campo de harness_list dice que ES ese panel, y el
+# valor canonico es "agente". Se acepta tambien "obrero" por compatibilidad,
+# pero al escribir un filtro nuevo aceptá LAS DOS.
+#
+# Por que este comentario existe: cinco scripts filtraron por "obrero" cuando el
+# harness emitia "agente". No fallaron — contaron CERO obreros siempre, y con
+# cero el umbral de reposicion es 1, asi que un tablero con un solo item para
+# veinte paneles leia como sano. Un filtro que no matchea nunca no se queja: se
+# lleva la flota puesta en silencio.
+
 # ───────────────────────────────────────────────────────── el contrato ──
 harness_list()   { "_${HARNESS}_list"; }
 harness_prompt() { "_${HARNESS}_prompt" "$1" "$2"; }

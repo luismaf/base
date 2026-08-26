@@ -21,7 +21,7 @@ MOTORES=(motores jefe foco)
 parar() { for m in "${MOTORES[@]}"; do pkill -f "scripts/$m.sh --loop" 2>/dev/null || true; done; echo "motores apagados"; }
 estado() {
   for m in "${MOTORES[@]}"; do printf '%-9s %s\n' "$m" "$(pgrep -f "scripts/$m.sh --loop" >/dev/null && echo andando || echo APAGADO)"; done
-  echo "obreros: $(harness_list 2>/dev/null | awk -F'\t' '$4=="obrero"' | wc -l)"
+  echo "obreros: $(harness_list 2>/dev/null | awk -F'\t' '($4=="obrero"||$4=="agente")' | wc -l)"
   echo "tablero: $("$DIR/tablero.sh" count 2>/dev/null || echo '?') pendientes"
 }
 

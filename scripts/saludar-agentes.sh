@@ -47,7 +47,7 @@ done
 
 if [ "$MODO" != lista ]; then
   while IFS=$'\t' read -r panel estado dir clase; do
-    [ "$clase" = obrero ] || continue
+    [ "$clase" = obrero ] || [ "$clase" = agente ] || continue
     [ "$panel" = "$JEFE" ] && continue
     if [ "$MODO" = todos ] || [ "$estado" = idle ] || [ "$estado" = done ]; then
       OBJETIVOS+=("$panel")

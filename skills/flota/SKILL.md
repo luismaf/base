@@ -202,6 +202,43 @@ Y el que no es de la flota sino del repo: **si el trabajo no está commiteado ni
 pusheado, desde afuera el proyecto parece muerto.** Nos pasó — otra sesión vio el
 repo con un commit y montó una segunda flota encima.
 
+## La compuerta: no dispersarse antes de terminar
+
+Queremos un equipo fanático de mejorar — que mire a la competencia, que le robe
+lo mejor a los mejores del mundo, que piense cómo se vende. Todo eso vale.
+
+**Y todo eso es, exactamente, la forma más fácil de no terminar nunca.**
+Investigar es cómodo, se siente productivo, no tiene final claro y no lo audita
+nadie. Un equipo que estudia competidores con el producto a medio hacer no está
+mejorando: se está escapando de terminar. El riesgo no es la pereza, es lo
+contrario — gente entusiasta yéndose por las ramas justo cuando falta poco.
+
+**La solución no es pedir disciplina.** La disciplina se gasta y nadie se da
+cuenta de cuándo se gastó. Es una **compuerta que se mide sola**: la escalera de
+mejora se parte en dos, y la mitad exploratoria está cerrada con llave hasta que
+los números digan que el objetivo está logrado.
+
+| Siempre disponibles (convergen) | Cerrados hasta terminar (exploran) |
+|---|---|
+| Interfaz, seguridad, rendimiento | Competencia |
+| Calidad de datos, cobertura | Venta |
+| Documentación, lo que está roto | Marketing, ideas prestadas |
+
+Dos reglas al escribir las condiciones del objetivo:
+
+1. **Si una condición no se puede medir, no es una condición: es un deseo.**
+   "Que la interfaz esté linda" no va. "Cero violaciones del contrato de diseño
+   en el recorrido automático" sí.
+2. **Los umbrales van altos.** "Casi" no abre la puerta: la mitad de los
+   productos que no se terminan estaban en 85% y alguien decidió que alcanzaba.
+
+Lo importante es que **no hay criterio humano que negociar**. El jefe no decide
+si ya se puede investigar: lo dice el número. `scripts/objetivo.sh`, configurado
+en `.tablero/objetivo.conf`.
+
+Y una vez abierta, se abre de verdad: ahí el equipo tiene que ser fanático de
+mejorar, porque a esa altura mirar afuera **es** el trabajo.
+
 ## La política que hace todo esto rentable
 
 Cuando los obreros son baratos —y más si son gratis e ilimitados— la aritmética

@@ -55,6 +55,16 @@ ESCALONES=(
 "WEB|Que tarea principal del usuario todavia no se resuelve en una pantalla, que se pide dos veces, que no entra en un telefono. Cada una es un item."
 )
 
+# ── Escalones EXPLORATORIOS: cerrados hasta lograr el objetivo ──────────
+# Valen mucho, y son la forma mas facil de no terminar nunca. Se abren cuando
+# ./scripts/objetivo.sh dice que la puerta esta abierta, y ni un minuto antes.
+EXPLORATORIOS=(
+"COMPETENCIA|Estudia como resuelven esto los mejores del pais y del mundo. Que hacen mejor, que hacen peor, que se les puede robar. Cada hallazgo aplicable es un item, con el porque y a que pantalla nuestra afecta."
+"VENTA|Que le falta a la demo, que numero convence a quien firma, que hace falta para que un cliente diga que si. Lo que no esta medido, medirlo es un item."
+"MARKETING|Como se cuenta esto afuera: a quien, con que argumento, con que prueba. Cada pieza que falte es un item."
+"IDEAS PRESTADAS|Productos de OTROS rubros que resuelven bien algo que nosotros resolvemos mal. Lo mejor casi nunca viene del competidor directo."
+)
+
 siguiente_escalon() {
   local n=0
   [ -f "$ESTADO" ] && n=$(cat "$ESTADO" 2>/dev/null || echo 0)
@@ -63,7 +73,7 @@ siguiente_escalon() {
   echo "$n"
 }
 
-obreros() { harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '$1!=j && $4=="obrero"' | wc -l; }
+obreros() { harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '$1!=j && ($4=="obrero"||$4=="agente")' | wc -l; }
 ram_mb()  { awk '/MemAvailable/ {printf "%d", $2/1024}' /proc/meminfo; }
 
 una_vuelta() {
@@ -81,6 +91,11 @@ Una zona exclusiva por item, en rutas. El contexto completo adentro del item: el
     echo "$(date +%H:%M) reponer: $pend<$n"
     return
   fi
+
+  # La compuerta. Sin ella el equipo se dispersa justo cuando falta poco.
+  local puerta="CERRADA"
+  ./scripts/objetivo.sh --puerta >/dev/null 2>&1 && puerta="ABIERTA"
+  [ "$puerta" = ABIERTA ] && ESCALONES+=("${EXPLORATORIOS[@]}")
 
   local i titulo cuerpo
   i=$(siguiente_escalon)

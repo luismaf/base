@@ -34,7 +34,7 @@ INTERVALO="${MOTORES_INTERVALO:-25}"
 VUELTAS="${MOTORES_VUELTAS:-6}"
 
 libres() {
-  harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '$4=="obrero" && $1!=j && ($2=="idle"||$2=="done")' | wc -l
+  harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '($4=="obrero"||$4=="agente") && $1!=j && ($2=="idle"||$2=="done")' | wc -l
 }
 pendientes() { "$TABLERO" count 2>/dev/null || echo 0; }
 
