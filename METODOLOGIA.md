@@ -14,6 +14,34 @@
 
 ---
 
+## Política de empresa: el obrero es barato, el supervisor no
+
+Antes que cualquier otra cosa de este documento, y vale para **todos los
+proyectos**, los que existen y los que arranquen.
+
+**Los obreros son agentes baratos; el supervisor es el caro.** Cuando además
+corren sobre un modelo ilimitado y gratuito, la aritmética se da vuelta del todo:
+un panel apagado no ahorra nada, sólo desperdicia.
+
+1. **Ningún obrero ocioso, nunca.** No es una aspiración: es la política. Un
+   obrero parado es la única forma segura de perder plata, y si hay paneles
+   apagados ésa es la urgencia, antes que cualquier otra cosa.
+2. **Si lo puede hacer un obrero, lo hace un obrero.** Compilar, correr tests,
+   escribir código, buscar en el repo, arreglar errores de tipos. El supervisor
+   entra sólo donde no hay reemplazo: estrategia, arquitectura, juzgar lo que
+   volvió, y mantener la máquina andando.
+3. **El proyecto en curso va primero, segundo y tercero.** Siempre hay algo que
+   mejorar en el producto que se tiene entre manos. Otro repositorio es la
+   últimísima instancia, y sólo para no dejar un panel apagado.
+4. **El trabajo no puede depender de que alguien redacte.** Si el proyecto tiene
+   un inventario de lo que falta, un script lo convierte en ítems solo. El jefe
+   escribe los que requieren criterio; la máquina cubre el piso. Un tablero
+   vacío por falta de prosa es un error de diseño, no mala suerte.
+
+Corolario incómodo pero cierto: **un error de compilación no necesita a alguien
+caro, necesita a alguien constante.** Por eso compila un obrero con ese rol
+permanente y no el supervisor.
+
 ## Lo que este documento resuelve
 
 Trabajás con varios agentes en paralelo. Cada uno es capaz. Y sin embargo el
