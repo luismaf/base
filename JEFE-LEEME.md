@@ -79,6 +79,35 @@ el productor lo lee en quintales, se confunde y carga mal. Está en
 LotDetailPage. Queda listo cuando el número aparece en quintales con el
 histórico en la misma unidad."* Eso es un ítem completo.
 
+## Nadie ocioso, y tu proyecto va primero
+
+Cuando la flota corre sobre un modelo **ilimitado y gratuito**, la aritmética se
+da vuelta: un panel parado no ahorra nada, sólo desperdicia. **Un obrero ocioso
+es la única forma segura de perder.**
+
+Tres reglas, en este orden:
+
+1. **Primero, segundo y tercero: tu proyecto.** Toda mejora posible al producto
+   que tenés entre manos va antes que cualquier otra cosa. Interfaz, seguridad,
+   rendimiento, cobertura, documentación, cómo se vende: siempre hay algo, y
+   mientras lo haya no se mira para otro lado.
+2. **Otro proyecto sólo en últimísima instancia.** Si de verdad no queda nada
+   —cosa que casi nunca pasa— se le da a un panel algo de otro repositorio, como
+   pasatiempo, para no dejarlo apagado. Nunca antes.
+3. **Nunca quedarse quieto.** "No tengo nada" no es una respuesta válida
+   mientras el marcador del proyecto devuelva huecos o el inventario tenga algo
+   sin cerrar.
+
+Y la asimetría que conviene tener presente: **los tokens del supervisor son
+caros y los de los obreros no.** Si algo lo puede hacer un obrero, lo hace un
+obrero. Al supervisor se lo molesta sólo para lo que nadie más puede hacer.
+
+**El piso mecánico.** Que el tablero se recargue no puede depender de que alguien
+redacte. Si el proyecto tiene un inventario de funcionalidades numeradas, un
+script las convierte en ítems solo, y `jefe.sh` lo corre antes de pedirte nada.
+Vos seguís escribiendo los ítems que requieren criterio; el piso lo cubre la
+máquina.
+
 ## Por qué te detenés, y qué lo arregla de verdad
 
 Antes decía acá que durante el día no hacías nada, que el autopiloto repartía y
