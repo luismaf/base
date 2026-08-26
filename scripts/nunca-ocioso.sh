@@ -193,8 +193,17 @@ if peldano_prestamo; then
   exit 0
 fi
 
-# Si se llego hasta aca, no hay trabajo en NINGUN repo. Eso no es un estado
-# normal: es una noticia, y el dueno tiene que enterarse.
+# ── LA ALARMA SUENA SOLO SI DE VERDAD NO HAY NADA ──────────────────────────
+# La primera version avisaba "sin trabajo en ningun repo" cada vez que la
+# escalera no llegaba al MINIMO, aunque hubiera conseguido items. Un aviso que
+# suena cuando el sistema funciona es un aviso que el dueno aprende a ignorar.
+if [ "$(pendientes)" -gt 0 ]; then
+  registrar "$NOMBRE: la escalera consiguio $(pendientes) pendientes (por debajo del minimo de $MINIMO, pero la flota tiene de que agarrarse)"
+  exit 0
+fi
+
+# Cero pendientes despues de subir los cuatro peldanos: no hay trabajo en
+# NINGUN repo. Eso no es un estado normal, es una noticia.
 registrar "$NOMBRE: ATENCION - sin trabajo en ningun repo. Esto lo tiene que ver el dueno."
 [ -x "$DIR/avisar-jefe.sh" ] && [ "$SECO" = "0" ] && \
   bash "$DIR/avisar-jefe.sh" "NUNCA-OCIOSO: $NOMBRE se quedo sin trabajo y tampoco hay en los vecinos. Hace falta que el jefe cargue objetivos nuevos." >/dev/null 2>&1

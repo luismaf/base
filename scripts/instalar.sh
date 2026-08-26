@@ -24,22 +24,43 @@ NOMBRE="$(basename "$(cd "$DESTINO" && pwd)")"
 [ -d "$DESTINO" ] || { echo "no existe $DESTINO" >&2; exit 1; }
 mkdir -p "$DESTINO/scripts" "$DESTINO/.logs/pedidos" "$DESTINO/.logs/tablero" "$DESTINO/.tmp"
 
+# La doctrina viaja con el kit. Un repo con los scripts y sin el documento
+# tiene el músculo sin la razón, y el primero que lea `poblar-flota.sh` va a
+# preguntarse por qué alguien querría llenar la máquina de agentes.
+mkdir -p "$DESTINO/docs"
+if [ ! -e "$DESTINO/docs/DOCTRINA-DEL-JEFE.md" ] || [ "${FORZAR:-0}" = "1" ]; then
+  cp "$ORIGEN/../DOCTRINA-DEL-JEFE.md" "$DESTINO/docs/DOCTRINA-DEL-JEFE.md"
+  echo "  doctrina  -> docs/DOCTRINA-DEL-JEFE.md"
+fi
+
 # El kit completo. Las cuatro últimas se agregaron el 2026-08-24 y son las que
 # más se extrañan en una máquina nueva: sin one-at-a-time.sh doce paneles
 # deciden compilar a la vez y la máquina se congela; sin latigo.sh un panel que
 # queda ocioso sin avisar no lo levanta nadie.
 #
-# Los seis últimos son los que hacen que el proyecto arranque solo:
-#   arrancar.sh      un comando, de repo instalado a flota trabajando
-#   poblar-flota.sh  abre tantos obreros como la RAM aguante, ni uno más
-#   motores.sh       reparte con las válvulas en cero, nadie parado
-#   jefe.sh          el reloj del jefe y la escalera de mejora
-#   foco.sh          devuelve el foco que la maquinaria le saca a la persona
-#   saludar-agentes.sh  el primer mensaje a una ventana nueva es "hola"
+# Los que hacen que el proyecto arranque solo y no se pare nunca:
+#   arrancar.sh         un comando, de repo instalado a flota trabajando
+#   poblar-flota.sh     abre tantos obreros como la RAM aguante, ni uno más
+#   motores.sh          reparte con las válvulas en cero, nadie parado
+#   jefe.sh             el reloj del jefe y la escalera de mejora
+#   foco.sh             devuelve el foco que la maquinaria le saca a la persona
+#   autoservicio.sh     el tablero se recarga solo desde el inventario
+#   nunca-ocioso.sh     la escalera del tablero vacío: recarga, negocio, préstamo
+#   saludar-agentes.sh  el primer mensaje a una ventana nueva es "hola", en lote
+#   saludar-dev.sh      lo mismo por panel, pero verificando primero que la
+#                       ventana exista y que haya un dev adentro; abre
+#                       `opencode --auto` donde ve un shell pelado
+#   errores-conexion.conf  las huellas del rechazo que disparan la sesión nueva
+#
+# Sin los dos últimos los repartidores escriben a ventanas cerradas y el ítem se
+# muere tomado por un panel que no existe. Sin nunca-ocioso.sh y poblar-flota.sh
+# la doctrina es una carta de intenciones: un tablero vacío apaga la flota y la
+# RAM libre queda sin obrero.
 for f in harness.sh tablero.sh autopiloto.sh celu.py avisar-jefe.sh mandar-a-panel.sh \
          nadie-ocioso.sh latigo.sh one-at-a-time.sh vigilar-paneles.sh wait-panel.sh \
-         arrancar.sh poblar-flota.sh motores.sh jefe.sh foco.sh saludar-agentes.sh \
-         autoservicio.sh objetivo.sh teatro.sh; do
+         arrancar.sh poblar-flota.sh motores.sh jefe.sh foco.sh autoservicio.sh \
+         nunca-ocioso.sh objetivo.sh teatro.sh \
+         saludar-agentes.sh saludar-dev.sh errores-conexion.conf; do
   # No se pisa lo que el repo ya tiene propio: avisar-jefe.sh suele estar
   # adaptado a los paneles de ese equipo, y pisarlo deja los avisos mudos.
   if [ -e "$DESTINO/scripts/$f" ] && [ "${FORZAR:-0}" != "1" ]; then
