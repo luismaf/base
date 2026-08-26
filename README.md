@@ -15,7 +15,21 @@ cp plantillas/README.plantilla.md /path/to/new-repo/README.md
 cp DESIGN.md INTERFAZ.md DESIGN_SYSTEM.md STACK.md METODOLOGIA.md /path/to/new-repo/docs/
 cp MIGRACION_LEGACY.md /path/to/new-repo/docs/   # only if replacing an existing system
 latigo init --dir /path/to/new-repo               # rules, lessons, boss guide
+
+cd /path/to/new-repo && bash scripts/arrancar.sh  # ← and it is working
 ```
+
+`arrancar.sh` is the whole point: one command takes a repo with the kit
+installed to a fleet that is working. It checks the harness answers, opens as
+many workers as the RAM actually allows, greets them before asking for anything,
+fills the board, and starts the three loops that keep it running — dispatch with
+the valves at zero so nobody sits idle, the boss clock that hands over the next
+action already decided, and the focus guard that gives the screen back to the
+person. `arrancar.sh --estado` says what is running; `--parar` stops the loops.
+
+If something has to be started separately afterwards, that is a bug in this
+script: whatever gets forgotten at start-up is exactly what turns up dark three
+hours later.
 
 Then fill every `{{HOLE}}` in the README, and write the one line that matters
 most: **where this project ends and what is not in scope.**

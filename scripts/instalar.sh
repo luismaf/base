@@ -28,8 +28,17 @@ mkdir -p "$DESTINO/scripts" "$DESTINO/.logs/pedidos" "$DESTINO/.logs/tablero" "$
 # más se extrañan en una máquina nueva: sin one-at-a-time.sh doce paneles
 # deciden compilar a la vez y la máquina se congela; sin latigo.sh un panel que
 # queda ocioso sin avisar no lo levanta nadie.
+#
+# Los seis últimos son los que hacen que el proyecto arranque solo:
+#   arrancar.sh      un comando, de repo instalado a flota trabajando
+#   poblar-flota.sh  abre tantos obreros como la RAM aguante, ni uno más
+#   motores.sh       reparte con las válvulas en cero, nadie parado
+#   jefe.sh          el reloj del jefe y la escalera de mejora
+#   foco.sh          devuelve el foco que la maquinaria le saca a la persona
+#   saludar-agentes.sh  el primer mensaje a una ventana nueva es "hola"
 for f in harness.sh tablero.sh autopiloto.sh celu.py avisar-jefe.sh mandar-a-panel.sh \
-         nadie-ocioso.sh latigo.sh one-at-a-time.sh vigilar-paneles.sh wait-panel.sh; do
+         nadie-ocioso.sh latigo.sh one-at-a-time.sh vigilar-paneles.sh wait-panel.sh \
+         arrancar.sh poblar-flota.sh motores.sh jefe.sh foco.sh saludar-agentes.sh; do
   # No se pisa lo que el repo ya tiene propio: avisar-jefe.sh suele estar
   # adaptado a los paneles de ese equipo, y pisarlo deja los avisos mudos.
   if [ -e "$DESTINO/scripts/$f" ] && [ "${FORZAR:-0}" != "1" ]; then

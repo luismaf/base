@@ -418,10 +418,34 @@ _custom_list()   { eval "${HARNESS_LIST_CMD:?definí HARNESS_LIST_CMD}"; }
 _custom_prompt() { eval "${HARNESS_PROMPT_CMD:?definí HARNESS_PROMPT_CMD}" "$(printf '%q %q' "$1" "$2")"; }
 _custom_read()   { eval "${HARNESS_READ_CMD:?definí HARNESS_READ_CMD}" "$(printf '%q %q' "$1" "${2:-45}")"; }
 
+# ── Arrancar un obrero nuevo ────────────────────────────────────────────
+# Cuarta primitiva. Recibe $1=nombre $2=clase-de-agente y el resto de
+# argumentos para el agente. Sale 0 si quedo andando.
+#
+# No todo harness puede crear paneles: si no puede, devuelve 1 y quien llama se
+# entera. Devolver 0 sin haber creado nada es la clase de mentira que deja la
+# maquina llena de obreros imaginarios.
+_herdr_start() {
+  local nombre="$1" clase="$2"; shift 2
+  local pane
+  pane=$(herdr pane new 2>/dev/null | grep -oE 'w[0-9]+:p[0-9A-Za-z]+' | head -1)
+  [ -z "$pane" ] && return 1
+  herdr agent start "$nombre" --kind "$clase" --pane "$pane" -- "$@" >/dev/null 2>&1
+}
+_tmux_start() {
+  local nombre="$1" clase="$2"; shift 2
+  tmux new-window -d -n "$nombre" "$clase $*" >/dev/null 2>&1
+}
+_custom_start() {
+  [ -n "${HARNESS_START_CMD:-}" ] || return 1
+  eval "$HARNESS_START_CMD" "$(printf '%q %q' "$1" "$2")"
+}
+
 # ───────────────────────────────────────────────────────── el contrato ──
 harness_list()   { "_${HARNESS}_list"; }
 harness_prompt() { "_${HARNESS}_prompt" "$1" "$2"; }
 harness_read()   { "_${HARNESS}_read" "$1" "${2:-45}"; }
+harness_start()  { "_${HARNESS}_start" "$@"; }
 
 # Un harness que no contesta NO es "cero paneles libres": es un harness caído.
 # Confundirlos fue el bug más caro que tuvimos — el autopiloto veía la lista
