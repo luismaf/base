@@ -11,6 +11,7 @@ Copiá la carpeta a otro repo y sigue valiendo.
 | **`JEFE-LEEME.md`** | **Si sos el jefe, empezá acá.** Qué cambió en tu trabajo: dejaste de repartir y pasaste a llenar el tablero. Con los dos fracasos que lo motivaron. |
 | **`METODOLOGIA.md`** | Cómo se trabaja: dónde termina el proyecto, cómo se delega, cómo no queda nadie ocioso, qué se testea. **Empezá por acá.** |
 | **`MIGRACION_LEGACY.md`** | **Si el proyecto reemplaza un sistema que ya funciona, empezá acá.** Las seis etapas, cómo se decide qué está vivo y qué es escombro, y el puente que hace barata la segunda migración. |
+| **`DISENO-INSTITUCIONAL.md`** | El perfil de tono para software serio y formal: color, tipografía, densidad e íconos. Incluye la trampa de elegir un acento que en el país de uso pertenece a un partido o a un club. |
 | **`INTERFAZ.md`** | La forma exacta: menú, formularios con URL propia, dos botones, filtros, buscador, colores y las piezas compartidas. Se copia tal cual. |
 | **`DESIGN.md`** | **El canon vivo del diseño.** Las reglas de interfaz que sobreviven al proyecto, con los bugs reales que las motivaron. Antes de tocar una pantalla, se lee esto. |
 | `DESIGN_SYSTEM.md` | Los tokens y componentes concretos. Se lee DESPUÉS de `DESIGN.md`, que es el que manda. |

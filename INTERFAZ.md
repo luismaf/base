@@ -37,23 +37,42 @@ dos rayas; abierta, giradas 45° y −45°. La misma pieza la usan el menú, el
 gatillo de filtros y el formulario abierto. Dos animaciones que hoy coinciden
 mañana divergen, porque alguien tocó una y no se acordó de la otra.
 
-**En el teléfono el menú es un overlay de pantalla completa**, pero arranca
-**debajo de la barra de título**, nunca desde el borde superior. Si tapara la
-barra, la cruz que lo cierra quedaría invisible e intocable, y es la única
-salida.
+**En el teléfono el menú es un overlay de pantalla completa, y tapa la barra.**
+Un menú que deja la barra asomando arriba no es un menú: es una lista dentro de
+otra pantalla. Cuando se abre, se abre del todo.
 
-**Dos niveles, y el segundo se abre en el lugar.** Un ítem es un grupo: tiene
-destino propio y, opcionalmente, submenús.
+Y como tapa la barra, **la cruz se va con él**: aparece dentro del overlay,
+arriba a la derecha, **exactamente en el punto donde estaban las dos rayitas**.
+No es una cruz nueva ni otra pieza: es la misma, en el mismo lugar, girada. El
+dedo del usuario no tiene que aprender un segundo destino.
 
-- **En escritorio** los submenús cuelgan verticalmente del grupo, en la barra.
-- **En el teléfono** el grupo se toca y **se expande dentro del mismo overlay**,
-  sin abrir otra pantalla. Eso es lo que lo hace usable con el pulgar, y se rompe
-  apenas alguien decide que un submenú merece pantalla propia.
-- Qué va visible en la barra lo decide **la frecuencia de uso real**, no la
-  simetría del organigrama.
-- Si no entran, hay un **"Más"** que expande hacia abajo — pero es la última
-  salida. **Antes de recurrir a "Más" se agrupa en submenús**: una barra que
-  necesita "Más" casi siempre está mal agrupada.
+## Menú y formulario se comportan distinto, y es a propósito
+
+Es la confusión más fácil de cometer, porque los dos "se abren encima". Pero son
+dos cosas y se resuelven al revés:
+
+| | Menú | Formulario |
+|---|---|---|
+| Qué es | Un cambio de **lugar** | Un cambio de **estado** |
+| Cómo aparece | Overlay que tapa todo, barra incluida | **Página propia, con su URL** |
+| Dónde va la cruz | Adentro del overlay | En la barra, que se queda |
+| Al cerrarlo | Volvés donde estabas | Volvés donde estabas, con el navegador |
+
+**El menú puede ser overlay porque no es un lugar donde se trabaja**: se abre,
+se elige y se cierra en dos segundos. Nada de lo que hay debajo importa mientras
+está abierto, y por eso taparlo entero es correcto — es más claro y es más
+rápido de cerrar.
+
+**El formulario no puede serlo, porque sí es un lugar donde se trabaja.** Ahí se
+carga, se corrige, se vuelve. Si es un overlay pierde todo lo que da una
+dirección propia: no se puede compartir el enlace, el botón atrás cierra la
+aplicación entera en vez del formulario, y una recarga se lleva puesto lo que se
+estaba escribiendo. Una pantalla donde alguien pasa tres minutos escribiendo
+merece una URL.
+
+En el formulario, entonces, **la barra se queda** — y ahí las mismas rayitas se
+vuelven cruz para cancelar. Un solo control con dos trabajos según haya o no un
+formulario abierto; nunca una cruz de más al lado.
 
 ## Los formularios
 
@@ -63,8 +82,8 @@ atrás, recargar sin perder dónde estabas y enlazar desde una notificación.
 
 Lo que se conserva del patrón de panel:
 
-- **Se ancla arriba, pegado a la barra de título**, y **oculta las pestañas** o
-  lo que hubiera antes. No compite con nada.
+- **Es una ruta, no un panel.** Se ancla arriba, debajo de la barra, y oculta
+  las pestañas o lo que hubiera antes: no compite con nada.
 - **La barra de título dice lo que se está cargando, en vivo.** Mientras se
   escribe el nombre, la cumbrera lo muestra. Es el mismo mecanismo con el que
   cualquier ficha publica su título, no un caso especial.
