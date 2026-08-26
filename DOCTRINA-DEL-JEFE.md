@@ -152,6 +152,36 @@ tareas de relleno.
 
 ---
 
+---
+
+## 5. La pregunta que se le hace a toda medición nueva
+
+> **¿Cómo se ve esto cuando el instrumento está roto?**
+> Si la respuesta es *"igual que cuando todo está bien"*, falta un control.
+
+Salió de tres bugs seguidos que nos apagaron la flota, y los tres fallaron del
+mismo modo: **devolviendo un valor plausible en vez de un error.**
+
+| el instrumento roto | se ve igual que |
+|---|---|
+| un filtro por clase que no matchea nunca | una flota sin obreros |
+| un `grep` que matchea de más (un rango `F-124 a F-128` tapando medio inventario) | un inventario cubierto |
+| un `find -newermt` que devuelve cero en un montaje raro | un proyecto quieto |
+
+Ninguno de los tres se quejó. Ninguno escribió una línea en un log. Los tres
+llevaron a la conclusión opuesta a la verdad, con total confianza.
+
+**El control es barato y es siempre el mismo: medir la misma cosa por una
+segunda vía que falle distinto, y comparar.** `teatro.sh` cuenta los commits del
+repo además de mirar cada panel: si el repo produjo veinte commits y el
+detector cree que los veinte paneles están congelados, el que está roto es el
+detector. Un instrumento que no puede contradecirse a sí mismo no es un
+instrumento, es una opinión.
+
+Corolario para el que escribe una medición nueva: **antes de confiar en un
+número, rompelo a propósito y mirá qué imprime.** Si imprime lo mismo que
+cuando anda, todavía no está terminado.
+
 ## Archivos que hacen que esto se cumpla
 
 | archivo | qué garantiza |
