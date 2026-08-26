@@ -1,0 +1,182 @@
+---
+name: flota
+description: Poner a trabajar una flota de agentes en paneles de terminal y que no se pare nunca — desplegar según la RAM, cargar el tablero solo, repartir sin frenos, despertar al jefe y devolverle el foco a la persona. Usar cuando haya que arrancar, conducir o destrabar un equipo de agentes en cualquier proyecto, o cuando aparezcan paneles parados.
+---
+
+# Conducir una flota de agentes
+
+Una flota de agentes en paneles de terminal se para sola. No por falta de ganas
+ni de trabajo: por mecanismo. Esta skill es lo que aprendimos parándola muchas
+veces, y sobre todo **dónde mirar primero cuando se para**.
+
+La regla que ordena todo lo demás: **cada vez que la flota se detiene, la causa
+está en el mecanismo, no en los agentes.** Empujarlos es tratar el síntoma.
+
+## El comando
+
+Con el kit instalado (ver la skill `base`), un solo comando lleva un repo a una
+flota trabajando:
+
+```bash
+bash scripts/arrancar.sh          # poblar, saludar, cargar, encender
+bash scripts/arrancar.sh --estado # qué está andando
+bash scripts/arrancar.sh --parar  # apagar los motores (los obreros siguen)
+```
+
+Si algo hay que arrancarlo aparte después, es un bug de ese script: **lo que uno
+se olvida de encender es exactamente lo que aparece apagado a las tres horas.**
+
+## Los cinco pasos, y por qué cada uno
+
+**1. Verificar que el harness conteste.** Un harness mudo **no es "cero paneles
+libres": es que no hay con quién hablar.** Confundir las dos cosas fue el bug más
+caro: el repartidor veía la lista vacía, no empujaba a nadie, no escribía una
+línea de log, y el equipo entero quedaba parado horas mientras todo "corría
+bien".
+
+**2. Poblar según la RAM, y no según la memoria libre.** Dos trampas:
+
+- **Un agente no pesa lo que pesa recién nacido.** Arranca en ~230 MB y con horas
+  encima llega a 1,6 GB. Se presupuesta por el **percentil 90 del PSS**, no por
+  la mediana: la mediana planifica para el mejor caso.
+- **El crecimiento es diferido.** Si se crean ocho midiendo después de cada uno,
+  ninguna medición miente y aun así la máquina se hunde. Se **descuenta el costo
+  completo apenas se crea** el obrero, sin esperar a medirlo.
+
+**3. Saludar antes de pedir.** El primer mensaje a una ventana nueva es `hola`,
+nunca el pedido. Un agente frío que recibe cuarenta líneas responde mal — se
+pierde, contesta a medias o no arranca. Saludado y esperado unos segundos, acepta
+lo mismo sin problema. Y cuando uno no contesta, tiene un error que no importa o
+ya se le insistió tres veces, **no va un cuarto recordatorio: va sesión nueva y
+`hola`.** Insistirle a un panel mudo es la forma más cara de no lograr nada.
+
+**4. Cargar el tablero sin que nadie redacte.** Si el tablero sólo se llena
+cuando alguien escribe, se vacía — y cuando se vacía, la flota espera a que esa
+persona conteste. El trabajo ya está escrito en algún lado (un inventario de
+funcionalidades, una lista de pantallas, la salida de un script que mide huecos):
+convertirlo en ítems tiene que ser mecánico. El jefe sigue escribiendo los que
+requieren criterio; la máquina cubre el piso.
+
+**5. Encender los motores y dejarlos.** Tres bucles que se cubren entre ellos.
+
+## Los tres motores
+
+| Motor | Qué resuelve |
+|---|---|
+| `motores.sh` | Reparte con las válvulas en cero y barre hasta que no queda nadie libre |
+| `jefe.sh` | Despierta al jefe con la próxima acción **ya decidida**, nunca una pregunta |
+| `foco.sh` | Devuelve el foco que la maquinaria le saca a la persona |
+
+**Las válvulas del reparto están calibradas para obreros que se pagan.** La
+gracia (esperar a que un panel lleve rato quieto) y el enfriamiento (no empujarlo
+dos veces seguidas) existen para no acosar. Con obreros gratis están al revés: un
+panel parado con treinta ítems en la cola no es prudencia, es desperdicio. **Van
+a cero.** Lo que NO va a cero es el tope de intentos de un ítem: eso protege al
+*ítem* de rebotar para siempre, no al panel de recibir trabajo. Son dos cosas
+distintas y sólo una sobra.
+
+**Y el reparto entrega de a poco por pasada**, así que quien se libera a mitad de
+la vuelta espera el intervalo entero. Hay que barrer en bucle.
+
+## Por qué el jefe se detiene
+
+**Un agente no se detiene por falta de ganas: termina su turno y nada lo vuelve a
+despertar.** La constancia no es una propiedad del agente, es una propiedad del
+sistema que lo despierta.
+
+El repartidor despierta a los obreros y saltea al jefe a propósito, porque el
+jefe no toma ítems. Ése es exactamente el agujero: **el único que repone el
+trabajo de todos es el único al que nada reinicia.** Por eso el jefe necesita su
+propio reloj, que le entregue la próxima acción ya decidida.
+
+Y cuando el tablero está lleno todavía hay trabajo: **la escalera de mejora**
+—interfaz, seguridad, rendimiento, calidad de datos, cobertura, documentación,
+cómo se vende, la web— que rota y no se completa nunca, porque para cuando vuelve
+a dar la vuelta el producto cambió. La condición de salida es imposible a
+propósito.
+
+La barandilla que evita que se vuelva relleno: **cada escalón apunta a un
+documento o a una medición**, nunca a la imaginación del jefe. "Este escalón está
+limpio" es una respuesta correcta; inventar un ítem no, porque un ítem que no
+acerca al objetivo es peor que un tablero vacío — cuesta plata, ocupa un obrero y
+produce algo que alguien después tiene que revisar y probablemente revertir.
+
+## El foco es de la persona
+
+Mandarle un mensaje a un panel a veces necesita enfocarlo, y eso le roba la
+pantalla a quien está trabajando en la suya, incluso desde otro espacio de
+trabajo.
+
+Devolverlo siempre sería peor: si la persona se movió a propósito, se lo estarías
+peleando. **Lo que lo hace preciso es distinguir quién lo movió:** nuestra
+automatización sólo enfoca paneles de obreros, así que si el foco quedó en uno de
+ésos se lo sacamos nosotros y hay que devolverlo; si quedó en uno humano, se
+movió la persona y no se toca.
+
+## Quién compila
+
+**Uno solo, y es un obrero con ese rol permanente**, sacado de la rotación del
+tablero para que no se lo lleven a otra cosa. Corre el chequeo en bucle, agrupa
+los errores por módulo, le manda a cada dueño su lista con archivo y línea,
+arregla él los triviales que no son de nadie, y vuelve a empezar cada vez que se
+cierra un ítem — los demás no pueden ver que rompieron algo.
+
+**Un error de compilación no necesita a alguien caro, necesita a alguien
+constante.** Y una máquina, un compilador a la vez: varios en paralelo no es más
+lento, es un cuelgue, y hay alguien sentado adelante.
+
+## Los cuatro modos de falla
+
+Cuando la flota está parada, mirá en este orden.
+
+**1. Las válvulas.** Es el primero porque es el más común y el más invisible. Si
+hay paneles quietos con el tablero lleno, es el enfriamiento. En un caso real
+estaba en 900 segundos: un panel que cerraba en dos minutos esperaba quince con
+treinta ítems al lado.
+
+**2. Un panel con varias reclamas.** El repartidor le asignó ítems mientras
+parecía ocioso entre dos llamadas a herramientas. Un panel hace una cosa por vez;
+el resto queda trabado e invisible, y el tablero parece ocupado mientras nada se
+mueve. Se diagnostica cruzando los ítems tomados contra **qué directorios
+cambiaron de verdad en el disco**: una zona reclamada donde no se escribió una
+línea es una reclama muerta. Se liberan.
+
+**3. Una detección por substring que sale positiva de más.** Nuestro generador
+buscaba el id de una funcionalidad dentro del texto de los ítems para no
+repetirla, y varios ítems mencionan **rangos**. Uno solo con un rango amplio daba
+por cubierto medio inventario. Lo peor del bug es su forma: **un match parcial
+que sale positivo de más no falla ruidosamente, apaga la flota en silencio.**
+Registro explícito, campo entero, sin regex que pueda interpretar el contenido.
+
+**4. Un panel sin cuota.** El proveedor lo dice en pantalla, a veces con un
+reintento medido en horas. No está ocioso ni roto: dejalo y no gastes ítems en
+él. Si se caen varios a la vez, es problema de cuentas y va al dueño.
+
+Y el que no es de la flota sino del repo: **si el trabajo no está commiteado ni
+pusheado, desde afuera el proyecto parece muerto.** Nos pasó — otra sesión vio el
+repo con un commit y montó una segunda flota encima.
+
+## La política que hace todo esto rentable
+
+Cuando los obreros son baratos —y más si son gratis e ilimitados— la aritmética
+se da vuelta: **un panel apagado no ahorra nada, sólo desperdicia.**
+
+1. **Ningún obrero ocioso, nunca.** No es aspiración, es la política. Si hay
+   paneles apagados, ésa es la urgencia y va antes que cualquier otra cosa.
+2. **Si lo puede hacer un obrero, lo hace un obrero.** Compilar, testear, buscar
+   en el repo, generar catálogos, arreglar tipos. El supervisor entra sólo donde
+   no hay reemplazo: estrategia, arquitectura, juzgar lo que volvió y mantener la
+   máquina andando.
+3. **El proyecto en curso va primero, segundo y tercero.** Otro repositorio es la
+   últimísima instancia, y sólo para no dejar un panel apagado.
+4. **El trabajo no puede depender de que alguien redacte.**
+
+## Escribir un ítem que aterriza
+
+- **Una zona exclusiva por ítem**, nombrada en rutas. Dos ítems tocando un
+  archivo es la herida autoinfligida más común, y no la cura ninguna habilidad
+  para mergear.
+- **Autocontenido.** El obrero no tiene tu contexto ni ve tu pantalla: el spec
+  real va pegado adentro.
+- **Decí qué NO tocar**, sobre todo las piezas compartidas.
+- **Nunca asignes por nombre.** Vos escribís *qué*; el repartidor elige quién.

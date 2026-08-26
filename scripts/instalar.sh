@@ -215,3 +215,22 @@ hardcodea el panel, porque los ids cambian cada vez que se recrea uno.
 Probá primero en seco, que no manda nada y te dice qué haría:
      AUTOPILOTO_SECO=1 bash $DESTINO/scripts/autopiloto.sh && tail ~/.logs-vigilante/autopiloto.log
 FIN
+
+# ── AGENTS.md: las reglas que lee opencode al abrir el proyecto ──────────
+# Sin esto, cada obrero improvisa su propio criterio y el resultado es un
+# producto que parece hecho por doce personas que no se hablaron.
+if [ ! -e "$DESTINO/AGENTS.md" ]; then
+  cp "$ORIGEN/../plantillas/AGENTS.plantilla.md" "$DESTINO/AGENTS.md"
+  echo "  + AGENTS.md (completá {{IDIOMA_CODIGO}} y {{IDIOMA_UI}})"
+else
+  echo "  = AGENTS.md ya existe, no lo piso"
+fi
+
+# ── Las skills, para que Claude las tenga en cualquier proyecto ──────────
+for sk in base flota; do
+  if [ -d "$ORIGEN/../skills/$sk" ] && [ ! -e "$HOME/.claude/skills/$sk" ]; then
+    mkdir -p "$HOME/.claude/skills"
+    ln -sfn "$(cd "$ORIGEN/../skills/$sk" && pwd)" "$HOME/.claude/skills/$sk"
+    echo "  + skill $sk enlazada en ~/.claude/skills"
+  fi
+done
