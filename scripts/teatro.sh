@@ -70,12 +70,55 @@ cambios=$(produccion)
 echo "paneles trabajando: ${#ok[@]}"
 echo "commits + archivos sin commitear en los ultimos ${VENTANA_MIN} min: $cambios"
 
+# ── Autocontrol: el instrumento se mide a si mismo ──────────────────────────
+#
+# Un detector que dice que TODOS estan haciendo teatro mientras el repo
+# commitea no descubrio una flota vaga: se rompio el. Y como el sintoma de un
+# instrumento roto se ve identico al del problema que busca, sin este control
+# la unica forma de enterarse es que alguien mire y sospeche.
+#
+# Mayoria y no unanimidad, a proposito: la primera prueba con el instrumento
+# roto a proposito marco 14 de 24 con 23 commits en la ventana, y eso ya es
+# imposible. Pidiendo unanimidad, ese caso pasaba.
+if [ "${#ok[@]}" -gt 0 ] && [ "$cambios" -gt 0 ]; then
+  : # hay produccion y hay paneles: todo normal, no hay nada que revisar
+fi
+if [ "${#ok[@]}" -ge 3 ] && [ "$cambios" -ge 3 ]; then
+  echo
+  echo "(control: ${#ok[@]} paneles ocupados y $cambios de produccion — coherente)"
+fi
+
 if [ "${#ok[@]}" -gt 0 ] && [ "$cambios" -eq 0 ]; then
   echo
   echo "SOSPECHA DE TEATRO: ${#ok[@]} paneles dicen estar trabajando y en"
   echo "${VENTANA_MIN} minutos no se produjo nada: ni un commit ni un archivo modificado."
   echo "Causas tipicas, en orden: items ya terminados que nadie cerro, items mal"
   echo "escritos que no se pueden hacer, o agentes compilando en circulos."
+  # ── El autocontrol necesita un SEGUNDO instrumento, no el mismo ──────────
+  #
+  # La primera version se controlaba con su propia medicion: "si marco a todos
+  # PERO veo produccion, el roto soy yo". Lo probe rompiendola a proposito y no
+  # sirvio — porque cuando la medicion se rompe devuelve CERO, y con cero el
+  # control nunca se dispara. Un instrumento no puede auditarse con el mismo
+  # sensor que se le rompio.
+  #
+  # Hace falta una segunda medicion que falle DISTINTO. git y el reloj del
+  # disco se rompen por motivos que no se solapan: git falla si no hay repo o
+  # el rango esta mal; los mtimes fallan en ciertos montajes. Que las dos den
+  # cero a la vez es raro; que una de las dos vea algo mientras la otra no,
+  # significa que la que no ve esta rota.
+  segunda=""
+  segunda=$(find crates web/src desktop/src docs scripts -type f \
+              \( -name '*.rs' -o -name '*.ts' -o -name '*.tsx' -o -name '*.md' -o -name '*.sh' \) \
+              -newermt "-${VENTANA_MIN} minutes" 2>/dev/null | wc -l)
+  if [ "$cambios" -gt 0 ] || [ "${segunda:-0}" -gt 0 ]; then
+    echo
+    echo "NO ME CREAS — marco ${#ok[@]} paneles como teatro, pero la segunda"
+    echo "medicion ve $segunda archivos tocados (la primera vio $cambios)."
+    echo "Cuando las dos no coinciden, el roto es el instrumento y no la flota."
+    echo "Revisa como mido antes de ir a sacudir a nadie."
+    exit 2
+  fi
   if [ "${1:-}" = --actuar ]; then
     for a in "${ok[@]}"; do
       latigo send "$a" "Pregunta directa: en los ultimos ${VENTANA_MIN} minutos no se produjo nada en el repo —ni un commit ni un archivo modificado— y tu panel figura trabajando.
@@ -89,6 +132,20 @@ Lo que no sirve es seguir pareciendo ocupado." >/dev/null 2>&1 || true
     done
     echo "sacudidos: ${#ok[@]}"
   fi
+elif [ "${#ok[@]}" -eq 0 ]; then
+  # Cero paneles ocupados no es una flota sana: es que no vi ninguno. Puede ser
+  # verdad (todos libres) o puede ser que el roster no contesto. Se dicen las
+  # dos, porque "sin sospecha" aca seria mentir con la misma frase que se usa
+  # cuando todo anda — que es el error que este script existe para no cometer.
+  if [ "$cambios" -eq 0 ]; then
+    echo
+    echo "NO PUEDO MEDIR — cero paneles ocupados y cero produccion."
+    echo "O la flota esta entera libre, o no estoy viendo nada. Verificá con"
+    echo "'latigo roster' antes de sacar conclusiones: un instrumento que no ve"
+    echo "nada se parece demasiado a un mundo donde no pasa nada."
+    exit 3
+  fi
+  echo "sin paneles ocupados, pero hay produccion ($cambios) — alguien commiteo y solto"
 else
-  echo "sin sospecha: hay produccion"
+  echo "sin sospecha: $cambios de produccion con ${#ok[@]} paneles ocupados"
 fi

@@ -171,6 +171,52 @@ excusa perfecta para el teatro**. Si vas a generar ítems de test, exigí en el
 ítem que cada uno nombre la regla que protege y que el informe diga qué encontró
 roto. Tres tests que encontraron algo valen más que veinte que no.
 
+## Los instrumentos que mienten en silencio
+
+El patrón que más nos costó, y apareció cuatro veces en una noche entre dos
+equipos: **una medición rota devuelve un valor plausible en vez de un error.**
+
+| Lo que se rompió | Cómo se veía | Qué era en realidad |
+|---|---|---|
+| Filtro por clase de panel que no matchea | "cero obreros" | El harness decía otra palabra |
+| Búsqueda por substring que matchea de más | "inventario cubierto" | Un ítem mencionaba un rango |
+| `find -newermt` en ciertos montajes | "cero archivos tocados" | git mostraba veinte commits |
+| Condición del objetivo que no se puede medir | Una puerta con cuatro llaves | Una de las llaves era decorativa |
+
+Ninguno se queja. Y como no se quejan, **se replican sin resistencia**: el del
+filtro por clase lo copié yo a cinco scripts sin notarlo.
+
+**La pregunta que hay que hacerle a toda medición nueva:** *¿cómo se ve esto
+cuando el instrumento está roto?* Si la respuesta es "igual que cuando todo está
+bien", falta un control.
+
+**Y el corolario práctico:** antes de confiar en un número, **rompé el
+instrumento a propósito y mirá qué imprime.** Si imprime lo mismo que cuando
+anda, todavía no está terminado.
+
+### El autocontrol necesita un segundo sensor, no el mismo
+
+Ésta la aprendimos aplicando el corolario, y es la parte fina.
+
+Un detector se puede auditar solo: *"si marco a la mayoría como sospechosos
+mientras el repositorio commitea, el roto soy yo y no la flota"*. Suena bien y
+funciona — **pero sólo si el control usa una medición distinta de la que falló.**
+
+Nuestro primer intento se controlaba con su propia medición. Al romperla a
+propósito, devolvió cero, el control comparaba contra ese mismo cero, nunca se
+disparó, y el detector salió a acusar a quince paneles que estaban trabajando.
+**Un instrumento no puede auditarse con el sensor que se le rompió.**
+
+La forma correcta es tener dos mediciones que **fallen por motivos que no se
+solapan** — por ejemplo git y el reloj del disco: git falla si no hay repo o el
+rango está mal, los mtimes fallan en ciertos montajes. Que las dos den cero a la
+vez es raro; que una vea algo mientras la otra no, significa que la que no ve
+está rota. Si discrepan, el detector se acusa a sí mismo y **no toca a nadie**.
+
+Umbral de mayoría y no de unanimidad, además: en una prueba real el instrumento
+roto marcó 14 de 24 paneles con 23 commits en la ventana, y eso ya es imposible.
+Pidiendo unanimidad, ese caso pasaba.
+
 ## Los cuatro modos de falla
 
 Cuando la flota está parada, mirá en este orden.
