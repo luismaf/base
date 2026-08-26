@@ -38,7 +38,8 @@ mkdir -p "$DESTINO/scripts" "$DESTINO/.logs/pedidos" "$DESTINO/.logs/tablero" "$
 #   saludar-agentes.sh  el primer mensaje a una ventana nueva es "hola"
 for f in harness.sh tablero.sh autopiloto.sh celu.py avisar-jefe.sh mandar-a-panel.sh \
          nadie-ocioso.sh latigo.sh one-at-a-time.sh vigilar-paneles.sh wait-panel.sh \
-         arrancar.sh poblar-flota.sh motores.sh jefe.sh foco.sh saludar-agentes.sh; do
+         arrancar.sh poblar-flota.sh motores.sh jefe.sh foco.sh saludar-agentes.sh \
+         autoservicio.sh; do
   # No se pisa lo que el repo ya tiene propio: avisar-jefe.sh suele estar
   # adaptado a los paneles de ese equipo, y pisarlo deja los avisos mudos.
   if [ -e "$DESTINO/scripts/$f" ] && [ "${FORZAR:-0}" != "1" ]; then
