@@ -7,6 +7,13 @@ inheriting everything the last project already paid for.
 **Nothing here depends on any particular domain.** Copy it to another repo and
 it still holds.
 
+## If you just restarted with no memory
+
+Read [`DESPUES-DE-UN-REINICIO.md`](DESPUES-DE-UN-REINICIO.md) first. A session
+dies — it restarts, runs out of quota, fills its context, gets killed. What it
+knew goes with it. **The only memory that survives is the one in the repository**,
+and that file is the entry point back into it.
+
 ## Start a project
 
 ```bash
