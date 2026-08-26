@@ -45,7 +45,15 @@ CRITICO_MB="${GUARDIA_CRITICO:-600}"
 GORDO_MB="${GUARDIA_GORDO:-650}"       # a partir de aca vale la pena tocarlo
 EDAD_MIN="${GUARDIA_EDAD_MIN:-40}"     # minutos de vida antes de ser candidato
 INTERVALO="${GUARDIA_INTERVALO:-60}"
-LARGOS="${GUARDIA_LARGOS:-jefe dev3}"  # contexto caro: se compactan, no se reinician
+CTX_COMPACTAR="${GUARDIA_CTX:-5000}"   # decimas de K: 500.0K. Compactar cuesta, se hace tarde
+RESERVA_COMPILAR="${GUARDIA_RESERVA:-2500}"  # MB que rustc necesita para no morir
+# Quien tiene contexto CARO de reconstruir. Solo el jefe: el suyo es la memoria
+# del proyecto — que se escribio, que se probo, que decidio y por que.
+#
+# El compilador NO esta aca, aunque al principio lo puse. No necesita recordar
+# la compilacion anterior: cada ciclo es leer errores nuevos y repartirlos. Su
+# contexto no vale nada y engorda igual.
+LARGOS="${GUARDIA_LARGOS:-jefe}"
 
 disp() { awk '/MemAvailable/ {printf "%d", $2/1024}' /proc/meminfo; }
 es_largo() { case " $LARGOS " in *" $1 "*) return 0;; *) return 1;; esac; }
@@ -71,9 +79,18 @@ una_vuelta() {
   echo "$(date +%H:%M) RAM ${d} MB por debajo de ${PISO_MB}"
 
   # Primero lo barato y sin costo de contexto: compactar a los largos gordos.
-  local a
+  # Compactar NO es gratis: se pierde detalle y a veces foco. Solo cuando el
+  # contexto ya esta grande de verdad — por debajo de eso el remedio cuesta mas
+  # que la enfermedad, porque ademas recupera apenas 83 MB.
+  local a ctx
   for a in $LARGOS; do
-    herdr agent prompt "$a" "/compact" >/dev/null 2>&1 && { echo "  compactado $a (contexto caro, no se reinicia)"; n=$((n+1)); }
+    ctx=$(herdr agent read "$a" --source visible 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?K' | tail -1 | tr -d 'K.')
+    [ -z "${ctx:-}" ] && continue
+    if [ "${ctx%%[!0-9]*}" -ge "$CTX_COMPACTAR" ]; then
+      herdr agent prompt "$a" "/compact" >/dev/null 2>&1 && { echo "  compactado $a (contexto ${ctx}, por encima del umbral)"; n=$((n+1)); }
+    else
+      echo "  $a en ${ctx} — por debajo del umbral, no lo toco"
+    fi
   done
 
   # Despues, reciclar cortos que ya cerraron y son viejos. De a dos, no de a uno:
@@ -86,7 +103,22 @@ una_vuelta() {
     [ "$estado" = working ] && continue
     es_largo "$nombre" && continue
     [ "$nombre" = "-" ] && continue
-    # Edad del panel: si es joven todavia no engordo y reiniciarlo es puro costo.
+
+    # LA REGLA DE EDAD, que antes estaba escrita en un comentario y no existia
+    # en el codigo. Un rato mirandola alcanzo para ver que EDAD_MIN aparecia una
+    # sola vez en todo el archivo: la declaracion. Documentacion que miente, que
+    # es la misma familia que veniamos cazando — decia una cosa y hacia otra, y
+    # nadie se quejaba.
+    #
+    # Un agente joven todavia no engordo, asi que reciclarlo es puro costo: se
+    # paga el contexto de nuevo sin recuperar memoria. Se lo deja trabajar sus
+    # 40 minutos primero.
+    ctx=$(herdr agent read "$nombre" --source visible 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?K' | tail -1 | tr -d 'K.')
+    if [ -n "${ctx:-}" ] && [ "${ctx%%[!0-9]*}" -lt 2000 ]; then
+      echo "  $nombre todavia esta liviano (${ctx}) — lo dejo trabajar"
+      continue
+    fi
+
     herdr agent prompt "$nombre" "/new" >/dev/null 2>&1 || continue
     sleep 2
     herdr agent prompt "$nombre" "hola" >/dev/null 2>&1 || true
@@ -102,7 +134,34 @@ una_vuelta() {
   echo "  RAM ahora: $(disp) MB"
 }
 
+# ── Hacer lugar para compilar ───────────────────────────────────────────────
+#
+# rustc necesita del orden de 2.5 GB para este workspace. Con la flota llena no
+# quedan, asi que el compilador no puede compilar — y como no compila, la
+# compuerta del objetivo no puede medir si el codigo esta sano. Un recurso que
+# nunca esta disponible no es un recurso: es un bloqueo permanente.
+#
+# Asi que se hace lugar A PROPOSITO y por un rato: se reciclan ociosos hasta
+# llegar a la reserva, se compila, y la flota se vuelve a llenar sola porque los
+# paneles siguen ahi.
+hacer_lugar() {
+  local objetivo="${1:-$RESERVA_COMPILAR}" d n=0
+  d=$(disp)
+  echo "$(date +%H:%M) haciendo lugar para compilar: hay ${d} MB, hacen falta ${objetivo}"
+  while [ "$d" -lt "$objetivo" ] && [ "$n" -lt 6 ]; do
+    local libre
+    libre=$(latigo roster 2>/dev/null | awk -v l="$LARGOS" '$3=="opencode" && $4!="working" && $1!="-" && index(l,$1)==0 {print $1; exit}')
+    [ -z "${libre:-}" ] && { echo "  no quedan ociosos que reciclar sin romper trabajo"; break; }
+    herdr agent prompt "$libre" "/new" >/dev/null 2>&1 || true
+    echo "  reciclado $libre"
+    n=$((n+1)); sleep 3; d=$(disp)
+  done
+  echo "  quedaron ${d} MB (hacian falta ${objetivo})"
+  [ "$d" -ge "$objetivo" ] && return 0 || return 1
+}
+
 case "${1:-}" in
+  --lugar-para-compilar) hacer_lugar "${2:-}"; exit $?;;
   --loop) while true; do una_vuelta; sleep "$INTERVALO"; done ;;
   *)      una_vuelta ;;
 esac
