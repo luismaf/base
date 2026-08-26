@@ -2,3 +2,12 @@
 __pycache__/
 *.pyc
 *.bak-*
+
+# La arquitectura de NUESTRA infraestructura no va en un repo publico.
+# base es el metodo de trabajo, reutilizable por cualquiera; donde viven
+# nuestras maquinas, con que proveedor, en que region y con que nombres de
+# base de datos es otra cosa. Vive en agp, que es privado.
+docs/LOCACION-NUEVA.md
+docs/FLOTA-DISTRIBUIDA.md
+docs/ARQUITECTURA-DISTRIBUIDA.md
+docs/ECONOMIA-DE-LA-FLOTA.md
