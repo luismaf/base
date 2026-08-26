@@ -1,0 +1,12 @@
+[Unit]
+Description=Flota llena — ni RAM libre sin obrero, ni obrero sin trabajo
+Documentation=file:///run/media/yo/A/rust/agp/docs/DOCTRINA-DEL-JEFE.md
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/run/media/yo/A/rust/agp
+# Primero el trabajo, después la gente. Al revés se abren devs para que miren
+# un tablero vacío, que es la forma cara de no hacer nada.
+ExecStart=/usr/bin/bash -c 'for r in agp ux tuti; do timeout -k 20 600 bash /run/media/yo/A/rust/$r/scripts/nunca-ocioso.sh || true; done'
+ExecStart=/usr/bin/bash -c 'timeout -k 30 900 bash /run/media/yo/A/rust/agp/scripts/poblar-flota.sh || true'

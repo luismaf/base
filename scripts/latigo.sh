@@ -16,8 +16,8 @@
 #    the id-based and name-based exclusions rotted in the first place.
 #
 # 2. IT WHIPPED OTHER PROJECTS. No cwd filter, so panels working in
-#    sibling repos and $HOME were handed
-#    items from the project board. autopiloto.sh learned this lesson months ago
+#    /run/media/yo/A/rust/ux, /run/media/yo/A/rust/tuti and $HOME were handed
+#    items from the AGP board. autopiloto.sh learned this lesson months ago
 #    (see the note at the end of scripts/colas.conf); this script never did.
 #
 # 3. IT HANDED THE SAME ITEM TO EVERY PANEL. `next_item` read the FIRST
@@ -85,7 +85,7 @@ adopted_list() {
 
 # Idle panels OF THIS REPO that are actual workers.
 # "Of this repo" means cwd == root OR listed in paneles-adoptados.conf: a panel
-# whose shell happened to start in the home directory is still a worker, and before the
+# whose shell happened to start in /home/yo is still a worker, and before the
 # adoption list it was skipped without ever appearing in the log.
 idle_workers() {
   herdr agent list 2>/dev/null | ROOT="$ROOT" ADOPTED="$(adopted_list | tr '\n' ' ')" python3 -c "
@@ -110,11 +110,26 @@ for a in d.get('result', {}).get('agents', []):
 }
 
 while true; do
-    # Nothing pending means nothing to hand out; refilling the board is the
-    # boss's decision, so nobody gets woken up for it.
+    # ── UN TABLERO VACÍO YA NO ES UNA RAZÓN PARA DORMIR (2026-08-26) ────────
+    #
+    # Esto decía: "no hay pendientes, recargar es decisión del jefe, a dormir".
+    # Con obreros gratis e ilimitados eso es lo contrario de lo que hay que
+    # hacer — un tablero vacío no es "terminamos", es un jefe que se quedó sin
+    # escribir, y esa falta de prosa apagaba la flota entera.
+    #
+    # Ahora se sube la escalera de nunca-ocioso.sh: recarga medible, después
+    # trabajo de negocio, y en últimísima instancia se le pide prestado a otro
+    # proyecto. Ver docs/DOCTRINA-DEL-JEFE.md.
+    if [ "$(grep -cP '^pendiente\t' "$ROOT/.logs/tablero.tsv" 2>/dev/null)" = "0" ]; then
+        if [ -x "$ROOT/scripts/nunca-ocioso.sh" ]; then
+            bash "$ROOT/scripts/nunca-ocioso.sh" >>"$LOG" 2>&1
+        fi
+        # Si la escalera tampoco consiguió nada, no hay trabajo en ningún repo
+        # y eso ya quedó avisado. Recién ahí se duerme.
         if [ "$(grep -cP '^pendiente\t' "$ROOT/.logs/tablero.tsv" 2>/dev/null)" = "0" ]; then
-        [ "$ONCE" = "1" ] && break
-        sleep "$INTERVAL"; continue
+            [ "$ONCE" = "1" ] && break
+            sleep "$INTERVAL"; continue
+        fi
     fi
     now=$(date +%s)
     for p in $(idle_workers); do
@@ -151,7 +166,7 @@ while true; do
         fi
 
         # An adopted panel's shell is NOT in the repo, so every relative path
-        # in the prompt below would resolve against the home directory and quietly fail.
+        # in the prompt below would resolve against /home/yo and quietly fail.
         preamble=""
         adopted "$p" && preamble="PRIMERO: cd $ROOT   (tu shell arranco en otro lado; todo lo de abajo es relativo a ese directorio)
 "

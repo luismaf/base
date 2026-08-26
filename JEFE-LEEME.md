@@ -180,3 +180,8 @@ Lo que no está más en esta tabla: "durante, nada".
   corta el hilo y cuesta un prompt.
 - Dejar el tablero vacío porque "ya van a terminar lo que tienen". Cuando
   terminen, se paran, y vos te enterás una hora después.
+
+> Todo esto, completo y con el chip de jefe humano, está en
+> [DOCTRINA-DEL-JEFE.md](DOCTRINA-DEL-JEFE.md). Los scripts
+> `poblar-flota.sh` y `nunca-ocioso.sh` son el músculo que hace que se cumpla
+> sin depender de que alguien se acuerde.

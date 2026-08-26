@@ -16,6 +16,7 @@ Copiá la carpeta a otro repo y sigue valiendo.
 | `DESIGN_SYSTEM.md` | Los tokens y componentes concretos. Se lee DESPUÉS de `DESIGN.md`, que es el que manda. |
 | **`STACK.md`** | Qué tecnología y por qué — incluida la lista de **lo que NO está instalado**, que es la que evita que alguien importe algo que no existe. |
 | `scripts/` | Los scripts que hacen que el mecanismo sea un proceso y no una intención. |
+| [`DOCTRINA-DEL-JEFE.md`](DOCTRINA-DEL-JEFE.md) | **Cómo se trabaja acá.** Nadie ocioso, el obrero es barato y el supervisor no, el proyecto propio primero, y el chip de jefe humano. Si algo choca con una costumbre, gana este documento. |
 | `plantillas/` | Los archivos que el equipo necesita el día uno. |
 
 ## Instalarlo en un repo nuevo
@@ -43,6 +44,8 @@ avisos). Las colas personales son opcionales.
 
 | Script | Qué hace |
 |---|---|
+| **`poblar-flota.sh`** | **Que no quede RAM libre sin un obrero adentro.** Los obreros son gratis e ilimitados: el único límite es la memoria. Mete devs de a uno midiendo después de cada uno, con piso de seguridad y piso de paneles por proyecto. |
+| **`nunca-ocioso.sh`** | **Que un tablero vacío no deje a nadie parado.** La escalera: recarga medible → trabajo de negocio → prestarle un dev a otro proyecto, en últimísima instancia. |
 | **`harness.sh`** | **La capa agnóstica.** Aísla las únicas tres cosas que el mecanismo necesita de la herramienta que corre los agentes. Cambiar de herramienta es tocar este archivo y ninguno más. |
 | **`tablero.sh`** | La fuente de trabajo. `add` / `bulk` / `take` (atómico) / `done` / `soltar` / `devolver` / `huerfanos` / `trabados` / `revivir`. `soltar` cobra el intento —el pedido llegó y el panel no lo cerró—; `devolver` no —el pedido nunca llegó—. |
 | **`autopiloto.sh`** | Reparte: cola personal → tablero → silencio. Con las tres válvulas anti-acoso. |

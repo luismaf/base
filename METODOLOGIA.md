@@ -591,3 +591,8 @@ tener razón después**.
 un guardián, no con una regla—, arreglá en vez de documentar, medí con un solo
 termómetro, y testeá lo que calcula dinero o cantidades que deciden: un test
 que falla es un bug, no un incordio.
+
+> Todo esto, completo y con el chip de jefe humano, está en
+> [DOCTRINA-DEL-JEFE.md](DOCTRINA-DEL-JEFE.md). Los scripts
+> `poblar-flota.sh` y `nunca-ocioso.sh` son el músculo que hace que se cumpla
+> sin depender de que alguien se acuerde.
