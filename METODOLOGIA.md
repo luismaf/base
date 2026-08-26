@@ -14,6 +14,30 @@
 
 ---
 
+## Dos frenos que hay que soltar cuando los obreros son gratis
+
+Los descubrimos con paneles parados y trabajo esperando al lado.
+
+**Las válvulas del reparto están calibradas para obreros que se pagan.** La
+gracia (esperar a que un panel lleve rato quieto) y el enfriamiento (no mandarle
+dos veces seguidas) existen para no acosar y no gastar de más. Con obreros
+gratis están al revés: un panel parado con treinta ítems en la cola no es
+prudencia, es desperdicio. **Con obreros ilimitados, gracia y enfriamiento van a
+cero.** Fue exactamente eso: tres paneles quietos con treinta y un ítems
+esperando, y con las válvulas en cero salieron los tres en el mismo segundo.
+
+**Y el reparto entrega de a poco por pasada**, así que una sola no alcanza. Hay
+que barrer en bucle hasta que no quede nadie libre o se vacíe el tablero.
+
+**El otro freno es el foco.** Mandarle un mensaje a un panel a veces necesita
+enfocarlo, y eso le roba la pantalla a la persona que está trabajando en la suya
+—incluso en otro espacio de trabajo. Antes de cada vuelta se anota quién tenía el
+foco y al terminar se le devuelve. **Que la maquinaria ande no puede costarle la
+pantalla al que la está usando.**
+
+`scripts/motores.sh --loop` hace las tres cosas: barre corto, con las válvulas
+en cero, y devuelve el foco.
+
 ## Política de empresa: el obrero es barato, el supervisor no
 
 Antes que cualquier otra cosa de este documento, y vale para **todos los
