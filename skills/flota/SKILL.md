@@ -194,6 +194,32 @@ bien", falta un control.
 instrumento a propósito y mirá qué imprime.** Si imprime lo mismo que cuando
 anda, todavía no está terminado.
 
+### Tres estados, no dos
+
+Todo instrumento tiene que poder decir tres cosas, y la tercera es la que casi
+nunca se implementa:
+
+```
+HAY PROBLEMA      actuá
+NO HAY PROBLEMA   seguí
+NO PUEDO MEDIR    arreglá el instrumento, y no le creas a nada de lo anterior
+```
+
+**La respuesta tranquilizadora es la peligrosa.** Un detector que no ve ningún
+panel imprime "cero sospechosos", que es exactamente lo que imprime una flota
+sana. Una compuerta cuyo catálogo falta calcula "0 de 0 = 100%" y se abre. Un
+denominador en cero **no es 100%: es que no se pudo medir**, y un instrumento
+roto nunca puede abrir una compuerta — en el peor caso la deja cerrada.
+
+### Y ojo con el control demasiado estricto
+
+El error simétrico, menos obvio y igual de caro: un control que acusa a lo que
+está bien deja de ser creíble, y a partir de ahí nadie lo mira. Nuestro chequeo
+de "que el archivo tenga sustancia" marcó como vacío un script de 144 líneas
+reales porque el patrón sólo buscaba `fn`. **Un instrumento se rompe en las dos
+direcciones**, y probarlo significa probar las dos: rompelo para que no vea nada,
+y después pasale algo sano y fijate que no lo acuse.
+
 ### El autocontrol necesita un segundo sensor, no el mismo
 
 Ésta la aprendimos aplicando el corolario, y es la parte fina.
