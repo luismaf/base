@@ -39,6 +39,31 @@ except Exception:
     print('inexistente')" || echo inexistente
 }
 
+# EL SALUDO VA ANTES DEL MENSAJE.
+#
+# La verificación de abajo mira si el panel pasó a `working`, que detecta el
+# prompt tipeado sin Enter — pero no detecta que del otro lado no haya nadie.
+# Una ventana cerrada, un shell con el dev muerto (el mensaje se escribe sobre
+# el prompt de bash, que lo intenta EJECUTAR) y un dev que rechaza todo con
+# error de conexión se ven los tres igual desde acá.
+#
+# saludar-dev.sh es barato: si el dev está vivo y la pantalla limpia sale al
+# instante sin gastar un token.
+#
+#   MANDAR_SIN_SALUDO=1   se lo saltea
+if [ "${MANDAR_SIN_SALUDO:-0}" != "1" ] && [ -x "$(dirname "$0")/saludar-dev.sh" ]; then
+  # `|| rc=$?` y no `case $?`: con `set -e` un ritual que devuelve 1 mata el
+  # script antes de llegar al case, y el que llama nunca ve el motivo.
+  rc=0
+  bash "$(dirname "$0")/saludar-dev.sh" "$PANEL" >/dev/null 2>&1 || rc=$?
+  case $rc in
+    0) : ;;
+    2) echo "no mandé nada: la ventana $PANEL no existe" >&2; exit 3 ;;
+    3) echo "no mandé nada: $PANEL está ocupado con otra cosa" >&2; exit 4 ;;
+    *) echo "no mandé nada: $PANEL no contesta ni con sesión nueva" >&2; exit 5 ;;
+  esac
+fi
+
 herdr agent prompt "$PANEL" "$MENSAJE" >/dev/null 2>&1 || true
 herdr agent send-keys "$PANEL" enter >/dev/null 2>&1 || true
 

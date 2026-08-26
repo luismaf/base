@@ -2,7 +2,7 @@
 # latigo.sh - fleet watchdog: when a panel goes idle without telling the boss,
 # it asks why and hands it an item from the board.
 #
-# ── THREE BUGS THIS FILE SHIPPED WITH (fixed 2026-08-24) ────────────────────
+# ── FOUR BUGS THIS FILE SHIPPED WITH (1-3 fixed 2026-08-24, 4 on 2026-08-26) ─
 #
 # 1. IT WHIPPED THE BOSS. There was no exclusion of any kind: `herdr agent
 #    list` returns every pane in every workspace, and each idle one got the
@@ -16,7 +16,7 @@
 #    the id-based and name-based exclusions rotted in the first place.
 #
 # 2. IT WHIPPED OTHER PROJECTS. No cwd filter, so panels working in
-#    /run/media/yo/A/rust/ux, /run/media/yo/A/rust/tuti and $HOME were handed
+#    sibling repos and $HOME were handed
 #    items from the project board. autopiloto.sh learned this lesson months ago
 #    (see the note at the end of scripts/colas.conf); this script never did.
 #
@@ -27,6 +27,26 @@
 #    claimed atomically through `tablero.sh take`, which is the only writer
 #    allowed to touch that file, and the panel is given the id so it can
 #    close it.
+# 4. IT WROTE INTO CLOSED WINDOWS (fixed 2026-08-26). Both `herdr agent
+#    prompt` and `send-keys` were called with `>/dev/null 2>&1` and their exit
+#    status was never read, so a dispatch "succeeded" even when the pane was
+#    gone, when the pane was alive but its opencode had died (the prompt then
+#    lands on a bash prompt, which tries to RUN it), or when opencode was
+#    refusing every request with a connection error. The item stayed `tomado`
+#    by a panel that could not possibly close it, and `take` had already
+#    charged it an attempt - three closed windows in a row are enough to mark
+#    a perfectly good item TRABADO. That is where the 92 items rescued by
+#    `tablero.sh huerfanos` came from, and why w5:p3C sat since 24 Aug with
+#    "Tomá el ítem 20260824-110251-0172347" frozen in its terminal title.
+#
+#    The fix is scripts/saludar-dev.sh: before naming an item, make sure the
+#    window exists, that a dev is running in it (open `opencode --auto` if
+#    not), and that it is not refusing; then greet it with "hola" AND WAIT FOR
+#    THE ANSWER. A cold window handed a forty-line request locks up and stops
+#    answering; the same window greeted first takes it whole. If the ritual
+#    fails the item goes back with `tablero.sh devolver`, which does not
+#    charge the attempt - the item did nothing wrong, the dispatcher did.
+#
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOG="$ROOT/.logs/latigo.log"
@@ -112,6 +132,24 @@ while true; do
         fi
         title=$(awk -F'\t' -v i="$id" '$2==i{print $6}' "$ROOT/.logs/tablero.tsv" 2>/dev/null | head -1)
 
+        # EL SALUDO VA ANTES DEL PEDIDO. Sin esto el látigo le escribe a
+        # ventanas cerradas, a shells sin dev adentro y a devs que están
+        # rechazando, y el ítem se muere tomado por un panel que no existe.
+        # Ver la nota 4 de arriba y scripts/saludar-dev.sh.
+        bash "$ROOT/scripts/saludar-dev.sh" "$p" >/dev/null 2>&1
+        listo=$?
+        if [ "$listo" != "0" ]; then
+            # `devolver`, no `soltar`: el pedido nunca llegó, así que el ítem
+            # no paga el intento.
+            bash "$ROOT/scripts/tablero.sh" devolver "$p" >/dev/null 2>&1
+            case "$listo" in
+              2) echo "$(date '+%F %T') VENTANA CERRADA $p - item=$id devuelto" >> "$LOG" ;;
+              3) echo "$(date '+%F %T') OCUPADO $p (no es momento) - item=$id devuelto" >> "$LOG" ;;
+              *) echo "$(date '+%F %T') NO RESPONDE $p (ni con sesion nueva) - item=$id devuelto" >> "$LOG" ;;
+            esac
+            continue
+        fi
+
         # An adopted panel's shell is NOT in the repo, so every relative path
         # in the prompt below would resolve against the home directory and quietly fail.
         preamble=""
@@ -128,9 +166,20 @@ while true; do
    y enseguida bash scripts/tablero.sh take $p para el siguiente. Nunca ocioso.
 REGLA DEL DUENO: PROHIBIDO correr suites de tests (vitest/cargo test) - verifica con tsc --noEmit (tus archivos), lectura de codigo o vista en vivo :3000/:8080. Builds rust DE A UNO: pgrep cargo/rustc antes de compilar; si hay otro build corriendo, espera.
 REGLA DEL DUENO: codigo y comentarios NUEVOS en INGLES (el espanol vive solo en i18n). Traduci lo que toques." >/dev/null 2>&1
+        mando=$?
         # herdr's submit does not always land in opencode: the text can sit
         # typed in the prompt box. The separate Enter is not optional.
         herdr agent send-keys "$p" enter >/dev/null 2>&1
+
+        # Y AHORA SE MIRA SI LLEGÓ. `herdr agent prompt` devuelve error cuando
+        # el panel no existe o cuando el texto quedó tipeado sin arrancar
+        # (agent_prompt_stalled); tirar ese código a /dev/null es exactamente
+        # como se perdían los ítems.
+        if [ "$mando" != "0" ]; then
+            bash "$ROOT/scripts/tablero.sh" devolver "$p" >/dev/null 2>&1
+            echo "$(date '+%F %T') NO LLEGO el pedido a $p - item=$id devuelto" >> "$LOG"
+            continue
+        fi
 
         printf '%s\t%s\n' "$p" "$now" >> "$STATE"
         echo "$(date '+%F %T') LATIGAZO $p item=$id ${title:0:60}" >> "$LOG"

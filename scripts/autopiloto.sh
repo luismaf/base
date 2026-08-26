@@ -181,6 +181,17 @@ for cola in "${COLAS[@]}"; do
 
   mandar() { # $1=texto $2=etiqueta-para-el-log
     if [ "$SECO" = "1" ]; then escribir "[seco] mandaría a $panel: $2"; return 1; fi
+    # EL SALUDO VA ANTES DEL PEDIDO. harness_prompt sabe si el texto ARRANCÓ,
+    # pero no si del otro lado hay alguien: una ventana cerrada, un shell sin
+    # dev adentro y un opencode que rechaza todo se ven los tres igual de
+    # "mandados". Ver scripts/saludar-dev.sh y docs/SALUDAR-AL-DEV.md.
+    bash "$DIR/saludar-dev.sh" "$panel" >/dev/null 2>&1
+    case $? in
+      0) : ;;
+      2) escribir "AUTOPILOTO: $panel VENTANA CERRADA — no le mando $2"; return 1 ;;
+      3) escribir "AUTOPILOTO: $panel ocupado con otra cosa — no es momento para $2"; return 1 ;;
+      *) escribir "AUTOPILOTO: $panel no contesta ni con sesión nueva — no le mando $2"; return 1 ;;
+    esac
     if harness_prompt "$panel" "$1"; then escribir "AUTOPILOTO: $panel arrancó con $2"; return 0; fi
     if [ "${CLASE_DE[$panel]:-agente}" = "manual" ]; then
       # ts hacia ADELANTE = enfriamiento: la válvula compara AHORA-ts, así que
@@ -214,7 +225,8 @@ for cola in "${COLAS[@]}"; do
   # ── 2. El tablero ───────────────────────────────────────────────────────
   # `soltar` primero: un ítem que quedó tomado por un panel que ahora está
   # libre vuelve a la pila. Un panel que muere a mitad no se lleva el trabajo
-  # a la tumba.
+  # a la tumba. Acá SÍ va `soltar`: a ese panel el pedido le llegó y no lo
+  # cerró, así que el intento se cobra.
   bash "$DIR/tablero.sh" soltar "$panel" 2>/dev/null || true
   item="$(TABLERO_REPO="$REPO" bash "$DIR/tablero.sh" take "$panel" 2>/dev/null || true)"
   if [ -n "$item" ]; then
@@ -223,7 +235,10 @@ for cola in "${COLAS[@]}"; do
     if ! mandar "Tomá el ítem $item del tablero: leé .logs/tablero/$item.md y ejecutalo entero. Es trabajo REAL pedido por el dueño, no lo reinterpretes. Al cerrarlo: bash scripts/tablero.sh done $item && bash scripts/avisar-jefe.sh. Si al leerlo ves que YA está hecho, marcalo done igual y contestá UNA línea." "$item (tablero)"; then
       # No arrancó (o fue ensayo): el ítem se devuelve. Un ensayo no puede
       # consumir el tablero, y un envío fallido no puede tragarse un pendiente.
-      bash "$DIR/tablero.sh" soltar "$panel" 2>/dev/null || true
+      # `devolver` y no `soltar`: el pedido nunca llegó, así que el ítem no
+      # paga el intento que `take` ya le cobró. Tres ventanas cerradas
+      # seguidas alcanzaban para marcar TRABADO a un ítem impecable.
+      bash "$DIR/tablero.sh" devolver "$panel" 2>/dev/null || true
     fi
     ts=$AHORA; idle_desde=0; guardar; continue
   fi

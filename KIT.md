@@ -44,13 +44,14 @@ avisos). Las colas personales son opcionales.
 | Script | Qué hace |
 |---|---|
 | **`harness.sh`** | **La capa agnóstica.** Aísla las únicas tres cosas que el mecanismo necesita de la herramienta que corre los agentes. Cambiar de herramienta es tocar este archivo y ninguno más. |
-| **`tablero.sh`** | La fuente de trabajo. `add` / `bulk` / `take` (atómico) / `done` / `soltar` / `trabados` / `revivir`. |
+| **`tablero.sh`** | La fuente de trabajo. `add` / `bulk` / `take` (atómico) / `done` / `soltar` / `devolver` / `huerfanos` / `trabados` / `revivir`. `soltar` cobra el intento —el pedido llegó y el panel no lo cerró—; `devolver` no —el pedido nunca llegó—. |
 | **`autopiloto.sh`** | Reparte: cola personal → tablero → silencio. Con las tres válvulas anti-acoso. |
 | **`celu.py`** | La pantalla y la boca en el celular, por VPN. Se dicta un pendiente y cae en el tablero. |
-| **`saludar-agentes.sh`** | El primer mensaje a una ventana nueva es **"hola"**, no el pedido. Un agente frío que recibe cuarenta líneas responde mal; saludado y esperado unos segundos, las acepta. Con `--nuevo` es además el rescate del panel trabado. |
+| **`saludar-dev.sh`** | **El ritual, antes de cada pedido.** ¿Existe la ventana? ¿Hay un dev corriendo adentro —o abro `opencode --auto`? ¿La pantalla muestra un rechazo —o hago `/new`? Y entonces **"hola", esperando la respuesta**. Sin esto los repartidores escriben a ventanas cerradas y el ítem se muere tomado por un panel que no existe. `--revisar` da el informe de toda la flota. Ver [SALUDAR-AL-DEV.md](SALUDAR-AL-DEV.md). |
+| **`saludar-agentes.sh`** | El mismo saludo pero en lote, a mano: a todos los ociosos, o a los que le nombres. Con `--nuevo` es el rescate del panel trabado. |
 | **`jefe.sh`** | **El reloj del jefe.** Lo despierta cada tanto con la siguiente acción ya decidida: reponer si el tablero está bajo, o subir un escalón de la escalera de mejora. Es lo que hace que no se detenga. |
 | `avisar-jefe.sh` | El panel que cierra un bloque avisa, con escalado jefe → subjefe → disco. |
-| `mandar-a-panel.sh` | Mandar un mensaje a un panel: envía, aprieta Enter y **verifica que arrancó**. |
+| `mandar-a-panel.sh` | Mandar un mensaje a un panel: saluda al dev, envía, aprieta Enter y **verifica que arrancó**. |
 | `instalar.sh` | Todo lo anterior andando en otro repo, en un comando. |
 
 ## Cambiar de herramienta de agentes

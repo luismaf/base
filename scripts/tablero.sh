@@ -62,6 +62,22 @@ def escribir(tsv, filas, antes):
         import shutil; shutil.copy2(tsv, tsv + ".bak")
     except Exception:
         pass
+    # Fotos rotativas. El .bak solo NO alcanza: si el daño llega de afuera, la
+    # copia se hace DESPUES del destrozo y no hay a donde volver. Paso: el
+    # tablero de un repo quedo en 80 bytes con 2261 items cerrados adentro y el
+    # .bak era de 0 bytes. Se guardan las ultimas doce, y solo de tableros
+    # grandes, para no llenar el disco con fotos de una cola de tres items.
+    try:
+        if len(filas) >= 100:
+            import glob, time, shutil
+            fotos = os.path.join(os.path.dirname(tsv), "tablero-fotos")
+            os.makedirs(fotos, exist_ok=True)
+            shutil.copy2(tsv, os.path.join(fotos, "tablero-%s.tsv" % time.strftime("%Y%m%d-%H%M%S")))
+            viejas = sorted(glob.glob(os.path.join(fotos, "tablero-*.tsv")))[:-12]
+            for v in viejas:
+                os.remove(v)
+    except Exception:
+        pass
     d = os.path.dirname(tsv)
     # ── EL REEMPLAZO ATOMICO SE COMIA LOS PERMISOS (esto tiro abajo la cola) ──
     # mkstemp crea el temporal con 0600 y dueño = quien escribe, y os.replace
@@ -217,6 +233,44 @@ escribir(tsv, filas, antes)
 ' "$TSV" "$panel"
     ;;
 
+  devolver)
+    panel="${1:?falta el panel}"
+    con_candado
+    python3 -c "$LIB"'
+import sys
+tsv, panel = sys.argv[1], sys.argv[2]
+filas = leer(tsv); antes = list(filas)
+n = 0
+for f in filas:
+    if len(f) >= 6 and f[0] == "tomado" and f[4] == panel:
+        f[0] = "pendiente"; f[4] = "-"
+        if len(f) >= 7:
+            try:
+                f[6] = str(max(0, int(f[6] or 0) - 1))
+            except ValueError:
+                f[6] = "0"
+        n += 1
+escribir(tsv, filas, antes)
+print(n)
+' "$TSV" "$panel"
+    ;;
+
+  huerfanos)
+    vivos="${1:?falta la lista de paneles vivos, separados por espacio}"
+    con_candado
+    python3 -c "$LIB"'
+import sys
+tsv, vivos = sys.argv[1], set(sys.argv[2].split())
+filas = leer(tsv); antes = list(filas)
+n = 0
+for f in filas:
+    if len(f) >= 6 and f[0] == "tomado" and f[4] not in vivos:
+        f[0] = "pendiente"; f[4] = "-"; n += 1
+escribir(tsv, filas, antes)
+print(n)
+' "$TSV" "$vivos"
+    ;;
+
   # Un trabado se revive a mano, después de arreglar lo que lo trababa.
   revivir)
     id="${1:?falta el id}"
@@ -265,5 +319,5 @@ print("%d filas (%d reconstruidas desde los .md)" % (len(filas), nuevos))
   list)
     awk -F'\t' '{printf "%-10s %-22s %2s %-14s %s\n", $1, $2, ($7==""?0:$7), $4, $6}' "$TSV" | tail -"${1:-40}"
     ;;
-  *) echo "uso: tablero.sh add|bulk|take|done|soltar|revivir|reconstruir|count|trabados|texto|list" >&2; exit 2 ;;
+  *) echo "uso: tablero.sh add|bulk|take|done|soltar|devolver|huerfanos|revivir|reconstruir|count|trabados|texto|list" >&2; exit 2 ;;
 esac
