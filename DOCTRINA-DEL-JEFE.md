@@ -209,6 +209,41 @@ NO HAY PROBLEMA   seguí
 NO PUEDO MEDIR    arreglá el instrumento, y no le creas a nada de lo anterior
 ```
 
+### Un instrumento roto nunca abre una compuerta
+
+Los dos errores no cuestan lo mismo, así que el instrumento roto tiene que
+caer siempre del lado barato. Un catálogo que desaparece hizo que una condición
+calculara *"pantallas vivas 0/0 = 100%"* y **abriera** la puerta: no sólo mintió,
+habilitó al equipo a irse a investigar competencia con el producto a medio
+hacer, que es justo lo que la compuerta existe para impedir. **Un denominador en
+cero no es 100%, es que no se pudo medir.**
+
+### Y se rompe en las dos direcciones
+
+Probar que un detector no tranquiliza cuando está ciego es la mitad del trabajo.
+La otra mitad es pasarle algo sano y verificar que **no lo acuse**. Un chequeo de
+sustancia que buscaba `fn` marcó como vacío un script de 144 líneas reales, que
+obviamente no tiene funciones de Rust.
+
+> El falso negativo tranquiliza. **El falso positivo quema la credibilidad**, y a
+> partir de ahí nadie mira el instrumento — que es la misma ceguera, más cara.
+
+Así que la prueba son dos: **cegalo y mirá que no tranquilice; pasale algo sano y
+mirá que no acuse.**
+
+### Y la forma del patrón, para reconocerlo de lejos
+
+En todos los casos la falla silenciosa se disfrazó de **la respuesta buena** —
+"todo bien", "está cubierto", "cero obreros", "100%"— nunca de la mala. Un
+componente que falla y contesta *"hay problema"* se descubre en cinco minutos;
+uno que falla y contesta *"todo bien"* vive meses.
+
+**Esto no es sólo de la maquinaria: vale para el producto.** Una consulta de
+deuda que devuelve cero cuando no está fijado el tenant, una conciliación que no
+encuentra diferencias porque no pudo leer el archivo del proveedor, un permiso
+que deja pasar porque la lista de roles vino vacía. Misma forma, y ahí el que
+paga es el cliente.
+
 ## Archivos que hacen que esto se cumpla
 
 | archivo | qué garantiza |

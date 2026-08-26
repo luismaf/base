@@ -59,7 +59,7 @@ fi
 for f in harness.sh tablero.sh autopiloto.sh celu.py avisar-jefe.sh mandar-a-panel.sh \
          nadie-ocioso.sh latigo.sh one-at-a-time.sh vigilar-paneles.sh wait-panel.sh \
          arrancar.sh poblar-flota.sh motores.sh jefe.sh foco.sh autoservicio.sh \
-         nunca-ocioso.sh objetivo.sh teatro.sh \
+         nunca-ocioso.sh objetivo.sh teatro.sh mirador.sh \
          saludar-agentes.sh saludar-dev.sh errores-conexion.conf; do
   # No se pisa lo que el repo ya tiene propio: avisar-jefe.sh suele estar
   # adaptado a los paneles de ese equipo, y pisarlo deja los avisos mudos.
