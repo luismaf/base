@@ -153,3 +153,29 @@ todas las rutas:
 
 Lo que una herramienta no puede: recorrer los dos flujos más importantes **sólo
 con el teclado** y anotar dónde se vuelve inusable.
+
+
+## El foco es de la persona, no del sistema
+
+**Nada le saca la atención al usuario sin devolvérsela.** Ni el cursor, ni el
+desplazamiento, ni el teclado, ni un cuadro encima de lo que está leyendo.
+
+- **El foco no se mueve solo.** Después de guardar vuelve a donde estaba el
+  trabajo; después de cerrar, a la fila desde la que se abrió.
+- **Nada se abre encima de lo que se está mirando** para preguntar sobre eso
+  mismo. Se pregunta al lado o abajo.
+- **Nada roba el teclado**: un campo que se auto-enfoca mientras alguien tipea en
+  otro le come lo que escribió.
+- **Nada mueve la página bajo el dedo.** Se reserva el espacio antes de que
+  llegue lo que carga tarde.
+- **Nada interrumpe por algo que puede esperar.**
+- **Y si hay que tomar el control, se devuelve apenas termina**, exactamente a
+  donde estaba.
+
+Lo mismo vale para la maquinaria que rodea a la interfaz: si un proceso enfoca
+una ventana para trabajar, se la devuelve a la persona. La regla que lo hace
+preciso es distinguir quién movió el foco — si lo movió el sistema, se devuelve;
+si lo movió la persona, no se toca. `scripts/foco.sh`.
+
+**Que el sistema funcione nunca puede costarle la atención al que lo está
+usando.**
