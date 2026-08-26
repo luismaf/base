@@ -255,3 +255,12 @@ for sk in base flota; do
     echo "  + skill $sk enlazada en ~/.claude/skills"
   fi
 done
+
+# ── La bitacora compartida ──────────────────────────────────────────────
+# Se enlaza, no se copia: tiene que ser el MISMO archivo en todos los repos o
+# deja de ser memoria comun y pasa a ser cuatro memorias que divergen.
+if [ ! -e "$DESTINO/CLAUDE.md" ]; then
+  ln -s "$(cd "$ORIGEN/.." && pwd)/CLAUDE.md" "$DESTINO/CLAUDE.md" 2>/dev/null \
+    && echo "  + CLAUDE.md (enlazado a base: bitacora compartida)" \
+    || { cp "$ORIGEN/../CLAUDE.md" "$DESTINO/CLAUDE.md"; echo "  + CLAUDE.md (copia; el enlace fallo)"; }
+fi
