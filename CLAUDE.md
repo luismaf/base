@@ -36,7 +36,57 @@ Las seis reglas que salieron de ahí están en `DESPUES-DE-UN-REINICIO.md`. La m
 corta y la que más sirve: **¿cómo se ve esto cuando el instrumento está roto?**
 Si la respuesta es "igual que cuando todo está bien", falta un control.
 
+## Si te quedaste sin RAM: qué rinde y qué no
+
+Medido, no supuesto. Y en orden de rendimiento real:
+
+**1. No sobrepoblar. Es la única palanca grande.** Todo lo demás es control de
+daños. Un agente nace en 279 MB y llega a 780 acá, y hasta **2 GB** en la
+máquina donde corren 41. Cuarenta y un agentes a un promedio de 1.1 GB son
+**45 GB**: ninguna máquina de escritorio los tiene, así que la flota estaba
+condenada desde que se creó, no desde que se llenó. `poblar-flota.sh` presupuesta
+por el **percentil 90 del PSS** y descuenta el costo completo al crear cada uno,
+porque el crecimiento es diferido y medir después de cada uno da verde hasta que
+es tarde.
+
+**2. Apartar el lugar para compilar al abrir**, no pelearlo después. Una
+compilación puede pedir casi toda la máquina y cuánto pide es incierto. Sacar
+gente cuando ya están todos trabajando es el peor momento y el más caro.
+
+**3. Invertir las prioridades del OOM.** El kernel elige el proceso más grande,
+que es el panel con más trabajo encima. `maquina/protect-panels.sh`: protegidos
+el plano de control, las sesiones y los obreros; sacrificables el escritorio, el
+navegador, los compiladores y el audio.
+
+**4. Reciclar, y sólo lo que corresponde.** Nunca a uno que trabaja. Nunca a uno
+joven, que todavía no engordó y reiniciarlo es puro costo. Y la señal **no es el
+tamaño sino el contexto por ítem cerrado**: 828K con 53 ítems es residuo y se
+recicla; 828K con cero ítems está peleando algo difícil, y reciclarlo garantiza
+que ese ítem **no se resuelva nunca**.
+
+**Lo que NO rinde: compactar.** Medido: recupera **83 MB de un agente de 700**,
+un octavo. El peso no es la conversación, es el runtime. Y además cuesta — se
+pierde detalle y a veces el hilo. Sólo vale para un contexto muy cargado cuyo
+reinicio saldría más caro, como el del jefe.
+
+Reiniciar recupera los ~500 MB completos, pero se lleva el contexto: hay que
+volver a explicarle dónde está parado, y **ese tiempo sale del objetivo**.
+
 ## Bitácora
+
+### 2026-08-26 — Un sistema de partes probadas no es un sistema probado
+
+En munix: 1337 tests unitarios verdes, 40 archivos de rutas con miles de líneas
+— y la base de datos con **cero filas**, **ninguna** de las 16 migraciones
+aplicada, y la tabla de boletas inexistente. Nada se había ensamblado nunca.
+
+La métrica del objetivo decía 98% porque contaba archivos con sustancia: medía
+**código escrito, no software que anda**. Otra vez la respuesta halagadora, y en
+la dirección más cara, porque deja creer que falta poco.
+
+Corregido con tres condiciones que no se pueden fingir escribiendo código:
+migraciones aplicadas, filas en la base, y **el camino completo probado una vez
+de verdad** — importar, emitir, cobrar, recibo, saldo, sin mocks.
 
 ### 2026-08-26 — Ocho fallas silenciosas en una noche, entre tres sesiones
 
