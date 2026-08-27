@@ -65,3 +65,12 @@ decidido: preguntá antes de inventarlo.
   datos, ni directorios de compilación, ni volcados.
 - **Nunca rebasees código de la aplicación**, y menos en un repo que no es tu
   prioridad.
+
+## No se pregunta permiso, se avanza (dueño, 2026-08-27)
+
+Cuando el ítem del tablero ya dice qué hacer, **no se pregunta "¿avanzo?": se
+avanza**. Un dev parado esperando permiso cuesta más que un camino subóptimo
+commiteado y corregible. Preguntar es sólo para ambigüedad REAL que cambia el
+resultado (dos caminos incompatibles entre sí); incluso ahí: elegí el más
+simple, dejá la decisión anotada en el commit, y seguí. La pregunta que
+bloquea un panel es la excepción absoluta, no la costumbre.
