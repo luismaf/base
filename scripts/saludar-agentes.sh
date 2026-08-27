@@ -57,6 +57,12 @@ fi
 
 [ ${#OBJETIVOS[@]} -eq 0 ] && { echo "no hay a quien saludar"; exit 0; }
 
+# REGIMEN PAGO: sin saludos de aceite — esto es para modelos gratuitos.
+if [ "$(bash "$(dirname "$0")/regimen.sh" 2>/dev/null || echo pago)" = "pago" ]; then
+  echo "regimen pago: sin saludos (la deteccion de paneles la hace el latigo)"
+  exit 0
+fi
+
 listos=(); mudos=()
 for a in "${OBJETIVOS[@]}"; do
   if [ "$NUEVO" = 1 ]; then

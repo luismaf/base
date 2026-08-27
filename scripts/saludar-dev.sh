@@ -175,6 +175,14 @@ abrir_dev() {
 # ── El saludo, esperando la respuesta ──────────────────────────────────────
 saludar() {
   local p="$1"
+  # REGIMEN PAGO: el "hola" de aceite es SOLO para modelos gratuitos que hay
+  # que calentar (dueño, 2026-08-27 — y lo pidio dos veces). En pago cada
+  # mensaje cuesta: la deteccion (ventana cerrada / ocupado / dev presente)
+  # ya se hizo antes de llegar aca; con dev presente alcanza y sobra.
+  if [ "$(bash "$DIR/regimen.sh" 2>/dev/null || echo pago)" = "pago" ]; then
+    registrar "$p: regimen pago — sin saludo de aceite"
+    return 0
+  fi
   if herdr agent prompt "$p" "hola" --wait --until idle --until done \
        --timeout "$ESPERA_HOLA" >/dev/null 2>&1; then
     registrar "$p: saludado y contestó"

@@ -38,7 +38,10 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 RAIZ="$(cd "$DIR/.." && pwd)"
 . "$DIR/harness.sh"
 TABLERO="$DIR/tablero.sh"
-JEFE="${JEFE_PANEL:-jefe}"
+# El pane del jefe es DINAMICO: lo escribe asegurar-jefe.sh en .logs/jefe.panel
+# cada vez que lo (re)crea. Un id hardcodeado en un unit de systemd es una
+# mentira a futuro: los panes se renumeran.
+JEFE="${JEFE_PANEL:-$(cat "$RAIZ/.logs/jefe.panel" 2>/dev/null || echo jefe)}"
 # El estado vive con el resto del mecanismo, en .logs/.
 ESTADO="$RAIZ/.logs/jefe.escalon"
 INTERVALO="${JEFE_INTERVALO:-180}"
