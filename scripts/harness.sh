@@ -162,6 +162,17 @@ for p in ps:
     else:
         print(pid, 'PENDIENTE', cwd, 'manual', sep='\t')
 " | while IFS=$'\t' read -r pid est cwd clase; do
+      # ── EL "WORKING" DE HERDR NO ES EVIDENCIA (2026-08-27) ────────────────
+      # herdr adivina el estado del agente y miente en las dos direcciones
+      # (default_known_agent_idle_fallback). El caso caro: un dev que TERMINO
+      # su item queda "working" para siempre, el repartidor le cree, y el
+      # panel no recibe latigazo nunca — "libres:0" con obreros ociosos.
+      # La evidencia real es la pantalla: un agente cuya pantalla no cambio
+      # en HARNESS_AGENTE_QUIETO segundos (180 por defecto; un modelo
+      # trabajando ESCRIBE) no esta trabajando, diga lo que diga herdr.
+      if [ "$clase" = "agente" ] && [ "$est" = "working" ]; then
+        if HARNESS_MANUAL_QUIETO="${HARNESS_AGENTE_QUIETO:-180}" _h_quieto "$pid"; then est=idle; fi
+      fi
       if [ "$est" = "PENDIENTE" ]; then
         # Ante la duda, OCUPADO. Equivocarse hacia "está trabajando" cuesta
         # esperar una vuelta; equivocarse hacia "está libre" le pisa el
