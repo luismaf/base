@@ -331,6 +331,15 @@ _herdr_prompt_manual() {
     return 2
   fi
 
+  # Freebuff con la sesion agotada: la pantalla dice "Press Enter to continue
+  # in a new session" y lo UNICO que corresponde es ese Enter — tipearle el
+  # pedido encima lo dejaba clavado (2026-08-27, w1:pN). Enter, esperar la
+  # sesion nueva, y recien entonces el ritual sigue.
+  if _h_limpio "$1" 12 | grep -q 'PressEntertocontinue'; then
+    herdr pane send-keys "$1" enter >/dev/null 2>&1
+    sleep 3
+  fi
+
   # La huella sale de la COLA del texto, no del principio. El prompt del
   # autopiloto tiene trescientos y pico de caracteres: la caja hace scroll y
   # los primeros se van FUERA DE VISTA. Buscando el arranque, la verificación
