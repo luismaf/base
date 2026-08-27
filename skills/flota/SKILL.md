@@ -59,6 +59,39 @@ requieren criterio; la máquina cubre el piso.
 
 **5. Encender los motores y dejarlos.** Tres bucles que se cubren entre ellos.
 
+## La guardia del bash pelado (2026-08-27)
+
+**Un agente muerto deja un pane que parece un panel manual.** OOM, un kill, un
+crash: el proceso se va, el shell queda, el clasificador lo ve "manual" y el
+repartidor le TIPEA el pedido a bash — una línea por renglón, "command not
+found" por pantalla, el pedido perdido y la terminal del dueño llena de basura.
+Pasó con siete panes a la vez.
+
+La regla, ahora mecanismo en `harness.sh`: **antes de tipearle a un pane
+"manual", exigir el marcador de TUI en pantalla** (`HARNESS_MANUAL_LIBRE`).
+Sin marcador no se tipea nada: se avisa y el pane queda para que
+`poblar-flota` lo reclame con un agente nuevo. Y la operación inversa también:
+si vas a matar agentes a mano (bajar la flota por RAM), **frená primero los
+motores** — matar al obrero y dejar al repartidor golpeando su puerta es
+fabricar exactamente este incidente.
+
+## Régimen pago vs gratis
+
+El saludo/"hola" de aceite es SOLO para modelos gratuitos que hay que calentar;
+con un modelo pago no hace falta y no se hace. El interruptor explícito vive en
+`~/.config/flota/modo` (`pago` | `gratis`) — no depender de la heurística por
+nombre de modelo. En régimen pago `nunca-ocioso` no inventa trabajo: el tablero
+lo repone el jefe con su reloj.
+
+## En otra máquina, otros números
+
+`poblar-flota.sh` y los pisos de RAM llevan los números de la máquina donde
+nacieron. En una máquina nueva revisar SIEMPRE: `POBLAR_REPOS` (las rutas de
+los repos de ESTA máquina), `PISO_MB` (12 GB de VPS no es 64 GB de escritorio)
+y que los timers de systemd lleven esas variables en `Environment=`. El síntoma
+del olvido es un freno que miente: "ningún repo tiene pendientes" con el
+tablero lleno.
+
 ## Los tres motores
 
 | Motor | Qué resuelve |
