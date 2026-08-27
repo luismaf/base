@@ -454,3 +454,19 @@ se da vuelta: **un panel apagado no ahorra nada, sólo desperdicia.**
   real va pegado adentro.
 - **Decí qué NO tocar**, sobre todo las piezas compartidas.
 - **Nunca asignes por nombre.** Vos escribís *qué*; el repartidor elige quién.
+
+## La pantalla es la evidencia final (2026-08-27, segunda vuelta)
+
+Un dev puede correr **envuelto** (`sudo su bot`, `timeout`, otra sesión) o ser
+una app que herdr no reconoce como agente. Mirar el primer proceso de
+foreground clasificó "ocupado con sudo" a un freebuff libre y el látigo no le
+habló nunca. El orden de evidencia que quedó en `saludar-dev.sh`:
+
+1. el nombre del foreground contra `DEVS_RE` (parámetro);
+2. algún **descendiente** del foreground contra `DEVS_RE` (cruza usuarios);
+3. la **firma de su TUI en pantalla** contra `DEVS_PANTALLA_RE` (parámetro).
+
+Una app nueva en un panel = agregar su nombre o su marcador de pantalla a esos
+parámetros. Nunca tocar la lógica. Y el gemelo en `motores.sh`: los paneles
+"manual" ociosos **cuentan como libres** — un obrero que el harness no
+reconoce sigue siendo un obrero.
