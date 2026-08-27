@@ -83,8 +83,13 @@ registrar() { printf '%s %s\n' "$(date '+%F %T')" "$*" >> "$LOG"; }
 # ── Qué hay en la ventana ──────────────────────────────────────────────────
 # Devuelve el nombre del proceso en primer plano, o "" si la ventana no está.
 proceso_en() {
-  herdr pane process-info --pane "$1" 2>/dev/null | python3 -c '
-import json, sys
+  # Recorre TODA la cadena de foreground buscando un dev conocido. Mirar solo
+  # fg[0] clasificaba "ocupado con sudo" a un freebuff lanzado via sudo y el
+  # latigo no le hablo NUNCA (ux w1:pN, 2026-08-27). sudo/timeout/nohup/env
+  # son envoltorios, no ocupacion: si un dev de DEVS_RE aparece en cualquier
+  # eslabon, ESE es el proceso del panel.
+  DEVS_RE="$DEVS_RE" herdr pane process-info --pane "$1" 2>/dev/null | python3 -c '
+import json, sys, os, re
 try:
     d = json.load(sys.stdin)
 except Exception:
@@ -93,7 +98,19 @@ pi = d.get("result", {}).get("process_info")
 if not pi:
     sys.exit(1)
 fg = pi.get("foreground_processes") or []
-print(fg[0].get("name", "") if fg else "")
+names = [f.get("name", "") for f in fg]
+pick = names[0] if names else ""
+devre = os.environ.get("DEVS_RE", "")
+if devre:
+    try:
+        rx = re.compile(devre)
+        for n in names:
+            if rx.match(n):
+                pick = n
+                break
+    except re.error:
+        pass
+print(pick)
 ' 2>/dev/null
 }
 
