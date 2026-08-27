@@ -34,7 +34,11 @@ INTERVALO="${MOTORES_INTERVALO:-25}"
 VUELTAS="${MOTORES_VUELTAS:-6}"
 
 libres() {
-  harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '($4=="obrero"||$4=="agente") && $1!=j && ($2=="idle"||$2=="done")' | wc -l
+  # Cuenta tambien a los "manual": un freebuff/TUI que herdr no reconoce
+  # como agente ES un obrero — harness_list ya lo clasifica idle/working
+  # por pantalla. Filtrarlos dejaba "libres:0" con un freebuff esperando
+  # (2026-08-27, ux): el latigo nunca llegaba a llamar al autopiloto.
+  harness_list 2>/dev/null | awk -F'\t' -v j="$JEFE" '($4=="obrero"||$4=="agente"||$4=="manual") && $1!=j && ($2=="idle"||$2=="done")' | wc -l
 }
 pendientes() { "$TABLERO" count 2>/dev/null || echo 0; }
 

@@ -91,11 +91,23 @@ _h_limpiar_texto() { printf '%s' "$1" | sed 's/[│┃╭╮╰╯─━┌┐�
 
 # ¿Alguno de los marcadores está en la pantalla? Se compara sin espacios de los
 # dos lados, porque el TUI corta las líneas donde le conviene.
+HARNESS_MANUAL_OCUPADO="${HARNESS_MANUAL_OCUPADO:-working...|Thinking|Esc to interrupt}"
+
 _h_libre() {
   local pantalla marca
   pantalla=$(_h_limpio "$1" 25)
   [ -n "$pantalla" ] || return 1
+  # Un marcador de OCUPADO mata al de libre. El freebuff muestra la caja
+  # "Enter a coding task" TODO el tiempo, tambien mientras trabaja: mirar
+  # solo la caja tipeaba encima de un agente ocupado (2026-08-27, ux w1:pH
+  # a 38 minutos de laburo con la caja abajo).
   local viejo_ifs="$IFS"; IFS='|'
+  for marca in $HARNESS_MANUAL_OCUPADO; do
+    [ -z "$marca" ] && continue
+    if printf '%s' "$pantalla" | grep -qF "$(_h_limpiar_texto "$marca")"; then
+      IFS="$viejo_ifs"; return 1
+    fi
+  done
   for marca in $HARNESS_MANUAL_LIBRE; do
     [ -z "$marca" ] && continue
     if printf '%s' "$pantalla" | grep -qF "$(_h_limpiar_texto "$marca")"; then
