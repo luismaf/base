@@ -291,6 +291,23 @@ _herdr_prompt_manual() {
   #   send-text  -> el texto entra y NO se manda
   #   send-keys enter -> lo manda
   local pane="$1" texto="$2"
+
+  # ── GUARDIA (2026-08-27): NUNCA tipearle trabajo a un bash pelado ────────
+  # Un pane cuyo agente murió (OOM, kill, crash) sigue existiendo como shell.
+  # El clasificador lo ve "manual", este ritual le tipeaba el prompt a BASH
+  # —una linea por renglon, "command not found" por pantalla, el pedido
+  # perdido y la terminal del dueño llena de basura. Paso el 2026-08-27 con
+  # siete panes a la vez.
+  # La unica prueba de que del otro lado hay una TUI esperando texto es el
+  # marcador en pantalla (HARNESS_MANUAL_LIBRE). Sin marcador NO SE TIPEA:
+  # se avisa y el pane queda para que poblar-flota lo reclame con un agente
+  # nuevo. Tres resultados, nunca dos: tipeado / NO tipeo (pane muerto) /
+  # no pude mirar.
+  if ! _h_libre "$pane"; then
+    echo "harness: $pane no muestra una TUI esperando texto (agente muerto o bash pelado): NO le tipeo el pedido" >&2
+    return 2
+  fi
+
   # La huella sale de la COLA del texto, no del principio. El prompt del
   # autopiloto tiene trescientos y pico de caracteres: la caja hace scroll y
   # los primeros se van FUERA DE VISTA. Buscando el arranque, la verificación
