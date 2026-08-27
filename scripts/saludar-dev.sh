@@ -75,13 +75,30 @@ ARRANCAR="${SALUDO_ARRANCAR:-1}"                 # 0 = no abrir devs, sólo diag
 
 # Procesos que cuentan como "hay un dev acá". freebuff no lo detecta herdr
 # como agente pero es un dev del dueño y NO se lo pisa.
-DEVS_RE='^(opencode|claude|freebuff|codex|gemini|cursor|aider|amp|droid|kimi|grok|copilot|pi)$'
+# Ambos criterios son PARAMETROS: una app nueva en un panel es agregar su
+# nombre a DEVS_RE (proceso) o su marcador a DEVS_PANTALLA_RE (lo que su TUI
+# muestra en pantalla), por env o editando aca — nunca tocar la logica.
+# La pantalla es la evidencia final: cubre wrappers (sudo su otro-usuario),
+# sesiones ajenas y apps que herdr no reconoce.
+DEVS_RE="${DEVS_RE:-^(opencode|claude|freebuff|codex|gemini|cursor|aider|amp|droid|kimi|grok|copilot|pi)$}"
 SHELLS_RE='^(bash|zsh|fish|sh|dash|-bash|-zsh|login)$'
 
 registrar() { printf '%s %s\n' "$(date '+%F %T')" "$*" >> "$LOG"; }
 
 # ── Qué hay en la ventana ──────────────────────────────────────────────────
 # Devuelve el nombre del proceso en primer plano, o "" si la ventana no está.
+# El PID del foreground, para poder mirar descendientes.
+pid_en() {
+  herdr pane process-info --pane "$1" 2>/dev/null | python3 -c '
+import json, sys
+try: d = json.load(sys.stdin)
+except Exception: sys.exit(1)
+pi = d.get("result", {}).get("process_info") or {}
+fg = pi.get("foreground_processes") or []
+print(fg[0].get("pid", "") if fg else "")
+' 2>/dev/null
+}
+
 proceso_en() {
   # Recorre TODA la cadena de foreground buscando un dev conocido. Mirar solo
   # fg[0] clasificaba "ocupado con sudo" a un freebuff lanzado via sudo y el
@@ -184,6 +201,7 @@ ritual() {
   local p="$1" forzar="${2:-0}" proc txt huella saludo_obligatorio=0
 
   proc="$(proceso_en "$p")"
+  local proc_pid; proc_pid="$(pid_en "$p")"
   if [ $? -ne 0 ] || [ -z "${proc+x}" ]; then :; fi
 
   if ! herdr pane get "$p" >/dev/null 2>&1; then
@@ -197,11 +215,53 @@ ritual() {
     abrir_dev "$p" || return 1
     saludo_obligatorio=1
   elif ! printf '%s' "$proc" | grep -qE "$DEVS_RE"; then
-    # vim, un build, un pager: la ventana está ocupada con otra cosa y
-    # escribirle un pedido sería tipear adentro de lo que el dueño esté
-    # haciendo. No es un fallo, es que no es el momento.
-    registrar "$p: ocupado con '$proc' — no es momento"
-    return 3
+    # Antes de declarar "ocupado": el proceso visible puede ser un ENVOLTORIO
+    # (sudo su bot, timeout, script) con el dev corriendo detras, incluso como
+    # OTRO USUARIO — la cadena de process-info no lo muestra (ux w1:pN,
+    # 2026-08-27: freebuff bajo 'sudo su bot', el latigo no le hablo nunca).
+    # Dos pruebas con evidencia real:
+    #   1) algun DESCENDIENTE del foreground matchea DEVS_RE;
+    #   2) la PANTALLA muestra la firma de una TUI de dev (la caja de tarea).
+    # Si cualquiera da, es un dev. Vim/build/pager no pasan ninguna.
+    local hijo_dev=""
+    if [ -n "${proc_pid:-}" ]; then
+      hijo_dev=$(python3 - "$proc_pid" <<'PYIN' 2>/dev/null
+import os, sys, re
+raiz = sys.argv[1]
+devre = re.compile(os.environ.get("DEVS_RE", "$^"))
+hijos = {}
+for pid in os.listdir("/proc"):
+    if not pid.isdigit(): continue
+    try:
+        with open(f"/proc/{pid}/stat") as f: campos = f.read().split()
+        nombre = campos[1].strip("()"); padre = campos[3]
+    except Exception: continue
+    hijos.setdefault(padre, []).append((pid, nombre))
+cola = [raiz]; visto = set()
+while cola:
+    actual = cola.pop()
+    if actual in visto: continue
+    visto.add(actual)
+    for cpid, cnombre in hijos.get(actual, []):
+        if devre.match(cnombre):
+            print(cnombre); sys.exit(0)
+        cola.append(cpid)
+PYIN
+)
+    fi
+    if [ -n "$hijo_dev" ]; then
+      registrar "$p: '$proc' envuelve a '$hijo_dev' — es un dev"
+      proc="$hijo_dev"
+    elif herdr pane read "$p" --source visible --lines 25 --format text 2>/dev/null         | sed 's/[│┃╭╮╰╯─━┌┐└┘├┤┬┴┼║╔╗╚╝═▍▏▎▄▀]//g' | tr -d ' \t\n\r'         | grep -qE "$(printf '%s' "${DEVS_PANTALLA_RE:-Enter a coding task|Press Enter to|End session|esc to interrupt|? for shortcuts|bypass permissions}" | tr -d ' ')"; then
+      registrar "$p: '$proc' pero la pantalla muestra una TUI de dev — es un dev"
+      proc="tui-por-pantalla"
+    else
+      # vim, un build, un pager: la ventana está ocupada con otra cosa y
+      # escribirle un pedido sería tipear adentro de lo que el dueño esté
+      # haciendo. No es un fallo, es que no es el momento.
+      registrar "$p: ocupado con '$proc' — no es momento"
+      return 3
+    fi
   fi
 
   if [ "$saludo_obligatorio" = "0" ]; then
