@@ -153,6 +153,13 @@ _h_quieto() {
 
 # ¿Está esperando el Enter que abre una sesión nueva? Sólo en ese caso hay que
 # despertarlo; si ya tiene la caja abierta, ese Enter sobra.
+# RESPETO AL HUMANO (2026-08-28): una pantalla que cambio hace menos de N seg
+# tiene a alguien encima — un humano navegando el selector de modelos o un
+# modelo escribiendo. En los dos casos, mandar texto es atropellar. Solo se
+# entrega a un pane con pantalla quieta >= HARNESS_ESTABLE_S (default 15s).
+HARNESS_ESTABLE_S="${HARNESS_ESTABLE_S:-15}"
+_h_estable() { HARNESS_MANUAL_QUIETO="$HARNESS_ESTABLE_S" _h_quieto "$1"; }
+
 _h_dormido() { _h_limpio "$1" 25 | grep -qF "PressEnterto"; }
 
 _herdr_list() {
@@ -207,6 +214,10 @@ for p in json.load(sys.stdin).get('result',{}).get('panes',[]):
 }
 
 _herdr_prompt() {
+  if ! _h_estable "$1"; then
+    echo "harness: $1 con actividad reciente en pantalla (humano o modelo) — no es momento" >&2
+    return 3
+  fi
   # Un panel que no es agente no entiende `agent prompt`: contesta
   # "No agent is running in pane" y el pedido se pierde en silencio.
   if [ "$(_herdr_clase "$1")" = "manual" ]; then _herdr_prompt_manual "$1" "$2"; return $?; fi
