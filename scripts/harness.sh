@@ -370,7 +370,10 @@ _herdr_prompt_manual() {
 
   # Sin foco no se manda NADA: mejor no hacer nada que dejar el texto tipeado
   # en el panel equivocado, que además se lo lleva puesto el próximo Enter.
-  _h_enfocar "$pane" >/dev/null 2>&1 || _h_dbg "foco: no se pudo (sigo sin foco — las teclas llegan igual)"
+  # AL REVES (dueño 2026-08-28): primero SIN foco — send-text/send-keys llegan
+  # igual y no se le roba la pantalla a nadie. El foco queda como FALLBACK
+  # medido: si la ronda sin foco no arranca, se prueba UNA ronda enfocando y
+  # el log dice cual funciono ("MANDADO sin foco" / "MANDADO con foco").
   _h_dbg "foco: ok"
 
   # 1. Enter para abrir sesión nueva, SÓLO si está esperando eso. Cuando el TUI
@@ -408,21 +411,22 @@ _herdr_prompt_manual() {
   # ocupado. Se miran las últimas líneas, que es donde está la caja: el texto
   # sigue existiendo más arriba, en el historial, y eso está bien.
   local arranco=0 espera=3
+  local con_foco=0
   for intento in 1 2 3; do
-    # El foco es OPCIONAL: send-keys llega igual sin enfocar (verificado en
-    # vivo 2026-08-28 con un freebuff: Enter sin foco arranco perfecto). El
-    # `|| break` viejo abortaba el ritual cuando el humano tenia el foco en
-    # otra parte — texto tipeado + 600s de castigo por pelear una pelea
-    # innecesaria.
-    _h_enfocar "$pane" >/dev/null 2>&1 || true
+    # Rondas 1-2: SIN foco (el modo normal). Ronda 3: fallback CON foco, y
+    # queda medido en el log cual de los dos modos arranco.
+    if [ "$intento" = "3" ]; then
+      con_foco=1
+      _h_enfocar "$pane" >/dev/null 2>&1 || true
+    fi
     herdr pane send-keys "$pane" enter >/dev/null 2>&1
     sleep "$espera"
     # Mandado = la caja quedó VACÍA, y eso se ve por el placeholder que el TUI
     # vuelve a mostrar. Es una señal positiva y distintiva; "ya no encuentro mi
     # texto" es negativa y se confunde con el mismo texto pasando al historial
     # justo arriba de la caja. Se aceptan las dos, la positiva primero.
-    if _h_limpio "$pane" 6 | grep -qF "$(_h_limpiar_texto "${HARNESS_MANUAL_VACIA:-Enter a coding task}")"; then _h_dbg "enter $intento: caja vacía -> MANDADO"; arranco=1; break; fi
-    if ! _h_limpio "$pane" 8 | grep -qF "$huella"; then _h_dbg "enter $intento: la huella ya no está -> MANDADO"; arranco=1; break; fi
+    if _h_limpio "$pane" 6 | grep -qF "$(_h_limpiar_texto "${HARNESS_MANUAL_VACIA:-Enter a coding task}")"; then _h_dbg "enter $intento: caja vacía -> MANDADO $([ "$con_foco" = 1 ] && echo CON || echo SIN) foco"; arranco=1; break; fi
+    if ! _h_limpio "$pane" 8 | grep -qF "$huella"; then _h_dbg "enter $intento: huella fuera -> MANDADO $([ "$con_foco" = 1 ] && echo CON || echo SIN) foco"; arranco=1; break; fi
     _h_dbg "enter $intento: sigue tipeado"
     espera=$((espera + 3))
   done
