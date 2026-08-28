@@ -98,6 +98,11 @@ rodeo es el cerebro, y las caras se enchufan a su API:
   interfaz. Evaluar antes de construir cada pieza: si un harness existente
   (el que el dueño llama "el de DeepSeek" — identificar cuál es) ya resuelve
   algo de esto, se adopta o se copia con cita.
+- **Política en config, mecanismo en código** (dueño, 2026-08-28): ninguna
+  regla de comportamiento hardcodeada — gates, umbrales, viewports,
+  silenciados: todo en config con defaults embebidos, y cada valor efectivo
+  visible en `status` con su FUENTE (default/config). Una regla enterrada en
+  el código "después no anda bien y no sabemos por qué".
 - Los scripts actuales quedan como fallback documentado; rodeo se los come de
   a uno, reparto primero (donde más sangra).
 
