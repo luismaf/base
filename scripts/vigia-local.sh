@@ -32,6 +32,14 @@ for x in d.get("result",{}).get("panes",[]): print(x["pane_id"])' 2>/dev/null); 
         herdr pane send-keys "$p" enter >/dev/null 2>&1 \
           && anotar "$p: sesion agotada -> Enter (sesion nueva)"
         ;;
+      *PlanMode*|*planmode*|*sigo?*|*Sigo?*)
+        # Alucinacion conocida (MiMo): cree estar en Plan Mode o pide permiso.
+        # La respuesta es SIEMPRE la misma y no gasta tokens de nadie darla.
+        herdr pane send-text "$p" "NO estas en Plan Mode: modo build con permisos de escritura. No se pregunta permiso: ejecuta, commitea y segui." >/dev/null 2>&1
+        sleep 1
+        herdr pane send-keys "$p" enter >/dev/null 2>&1 \
+          && anotar "$p: pregunton de plan-mode -> destrabado"
+        ;;
     esac
   done
   sleep "$INTERVALO"
