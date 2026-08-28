@@ -230,6 +230,16 @@ La versión alfa puede hardcodear; el diseño se piensa así desde ahora:
 - **La vara**: apuntar a empresa grande — user-centric, que ENTREGA VALOR.
   Cada decisión de esta cara se juzga con esa vara, no con la comodidad
   del que la programa.
+- **La entrada web soñada (dueño, 2026-08-28 — para luego):** entrás y hay
+  una pantalla VACÍA; empezás a escribir y estás en modo PLANNING por
+  defecto; la interfaz te invita a pasar a BUILD con X workers; un click y
+  el chat se corre a la izquierda con animación mientras aparecen —por
+  ejemplo— 3 pestañas más, y le hablás a cada worker como al chat de AGP.
+  Debajo, **tres niveles de modelo transparentes al usuario**: MiMo 2.5 /
+  GLM 5.3 Flash / GLM 5.3 Pro — el sistema rutea cada tarea al nivel que
+  amerita (y lo mide, como todo) sin que el usuario elija modelos jamás.
+  El planning corre en el nivel que piensa mejor; el trabajo mecánico en el
+  que rinde más por dólar.
 - **¿Web, Tauri o fork de herdr?** Decisión para cuando el demonio exista y
   la API mande: herdr está bien hoy; una web quizá sea mejor, quizá no; un
   fork de herdr con este layout es candidato. La API del demonio hace que la
