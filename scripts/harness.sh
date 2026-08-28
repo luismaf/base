@@ -370,7 +370,7 @@ _herdr_prompt_manual() {
 
   # Sin foco no se manda NADA: mejor no hacer nada que dejar el texto tipeado
   # en el panel equivocado, que además se lo lleva puesto el próximo Enter.
-  if ! _h_enfocar "$pane"; then _h_dbg "foco: FALLÓ"; volver; return 1; fi
+  _h_enfocar "$pane" >/dev/null 2>&1 || _h_dbg "foco: no se pudo (sigo sin foco — las teclas llegan igual)"
   _h_dbg "foco: ok"
 
   # 1. Enter para abrir sesión nueva, SÓLO si está esperando eso. Cuando el TUI
@@ -409,7 +409,12 @@ _herdr_prompt_manual() {
   # sigue existiendo más arriba, en el historial, y eso está bien.
   local arranco=0 espera=3
   for intento in 1 2 3; do
-    _h_enfocar "$pane" >/dev/null 2>&1 || break
+    # El foco es OPCIONAL: send-keys llega igual sin enfocar (verificado en
+    # vivo 2026-08-28 con un freebuff: Enter sin foco arranco perfecto). El
+    # `|| break` viejo abortaba el ritual cuando el humano tenia el foco en
+    # otra parte — texto tipeado + 600s de castigo por pelear una pelea
+    # innecesaria.
+    _h_enfocar "$pane" >/dev/null 2>&1 || true
     herdr pane send-keys "$pane" enter >/dev/null 2>&1
     sleep "$espera"
     # Mandado = la caja quedó VACÍA, y eso se ve por el placeholder que el TUI
