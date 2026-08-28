@@ -127,6 +127,12 @@ if [ -f "$REPO/docs/jefe.md" ]; then
   done < <(grep -iE '^\|.*\*\*(Jefe|Subjefe)' "$REPO/docs/jefe.md" 2>/dev/null \
            | grep -oE '`w5:p[A-Za-z0-9]+`' | tr -d '`')
 fi
+# El pane del JEFE es dinamico: asegurar-jefe lo escribe en .logs/jefe.panel.
+# Sin esta linea, un jefe recien creado recibia items como plebeyo (paso el
+# 2026-08-28: el jefe degradado a peon por su propio latigo).
+JP=$(cat "$REPO/.logs/jefe.panel" 2>/dev/null)
+[ -n "$JP" ] && EXCLUIDO["$JP"]=jefe-dinamico
+
 if [ -f "$REPO/scripts/no-repartir.conf" ]; then
   while IFS= read -r l; do
     l="${l%%#*}"; l="${l// /}"
