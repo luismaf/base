@@ -234,6 +234,13 @@ _herdr_prompt() {
     echo "harness: $1 tiene el FOCO — el humano esta ahi, no se le tipea" >&2
     return 3
   fi
+  # Dialogo abierto (selector de modelos, opciones, temas): aunque el pane
+  # NO tenga el foco, tiparle mete texto adentro del menu. Marcadores
+  # configurables por HARNESS_DIALOGO_RE.
+  if _h_limpio "$1" 20 | grep -qiE "$(printf '%s' "${HARNESS_DIALOGO_RE:-Select model|Change model|Switch model|Settings|Themes|Sessions|Keybinds}" | tr -d ' ')"; then
+    echo "harness: $1 tiene un DIALOGO abierto (opciones/modelos) — no se tipea" >&2
+    return 3
+  fi
   if ! _h_estable "$1"; then
     echo "harness: $1 con actividad reciente en pantalla (humano o modelo) — no es momento" >&2
     return 3

@@ -42,5 +42,22 @@ for x in d.get("result",{}).get("panes",[]): print(x["pane_id"])' 2>/dev/null); 
         ;;
     esac
   done
+  # ── EL GUARDIAN DEL MECANISMO (dueño 2026-08-28): "no puede depender de
+  # un humano mirando". Cada vuelta verifica, en bash puro y gratis:
+  #   a) el reloj del jefe esta activo (si no, lo enciende);
+  #   b) cada repo con flota tiene tablero con pendientes >= MINIMO_COLA
+  #      (si no, corre jefe.sh UNA vez ya — que despierta/crea al jefe);
+  # El humano se entera por el log, no por encontrar el taller muerto.
+  systemctl --user is-active reloj-jefe.timer >/dev/null 2>&1 || {
+    systemctl --user start reloj-jefe.timer 2>/dev/null && anotar "reloj-jefe estaba APAGADO -> encendido"
+  }
+  for repo in ${VIGIA_REPOS:-/run/media/yo/A/rust/agp /run/media/yo/A/rust/ux}; do
+    [ -f "$repo/.logs/tablero.tsv" ] || continue
+    pend=$(grep -c '^pendiente' "$repo/.logs/tablero.tsv" 2>/dev/null || echo 0)
+    if [ "${pend:-0}" -lt "${MINIMO_COLA:-4}" ]; then
+      anotar "$(basename $repo): cola en $pend (<${MINIMO_COLA:-4}) -> jefe.sh ya"
+      (cd "$repo" && timeout -k 10 120 bash scripts/asegurar-jefe.sh >/dev/null 2>&1; timeout -k 10 180 bash scripts/jefe.sh >/dev/null 2>&1) || true
+    fi
+  done
   sleep "$INTERVALO"
 done
