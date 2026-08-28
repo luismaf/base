@@ -198,3 +198,31 @@ pagar en la misma app; notificación al encargado: "hoy vence el 931 —
 geolocalizados, pagos: el mismo patrón — **la información viaja sola entre
 las partes que hoy se persiguen por teléfono**. Es Etapa 3+ del roadmap; se
 construye cuando el presente esté redondo.
+
+## 10. La cara del taller — visión de UI (para futuro, no YA)
+
+Registrado 2026-08-28 del dueño, para construir DESPUÉS del demonio (climax).
+La versión alfa puede hardcodear; el diseño se piensa así desde ahora:
+
+- **El jefe siempre visible**: un panel fijo (ocultable) del jefe — por
+  defecto a la izquierda — y N paneles agrupables de workers al lado.
+  Orientación vertical/horizontal como setting, no como destino.
+- **Botones [1] [2] [3] junto al panel del jefe**: eligen cuántos workers se
+  muestran en el resto de la pantalla (jefe + 1, jefe + 2, jefe + 3…).
+- **Barra inferior de workers** (estilo "20 background workers" de Claude):
+  todos los devs con su título; click → o un selector, o salir del zoom a
+  pantalla dividida jefe+workers.
+- **Usabilidad que hoy duele en herdr**: cerrar un panel PIDE CONFIRMACIÓN
+  (está al lado de zoom y se toca por error); un click en un panel = zoom;
+  atajos simples: ALT+1/2/3… (ALT+F1… si son muchos).
+- **Detección de ventanas MODULAR, sin recompilar**: si hoy el dev se llama
+  freebuff y pide Enter, y mañana se llama rifuff y pide Escape, eso se
+  agrega por CONFIGURACIÓN (perfiles de app: nombre de proceso, firma de
+  pantalla, tecla de reactivación) — nunca tocando código. Es la
+  generalización de lo que ya hacen `DEVS_RE`/`DEVS_PANTALLA_RE` en el
+  harness de shell: el demonio la hereda como principio de diseño desde el
+  día uno, aunque la alfa traiga los perfiles hardcodeados.
+- **¿Web, Tauri o fork de herdr?** Decisión para cuando el demonio exista y
+  la API mande: herdr está bien hoy; una web quizá sea mejor, quizá no; un
+  fork de herdr con este layout es candidato. La API del demonio hace que la
+  elección de cara sea barata y reversible.
