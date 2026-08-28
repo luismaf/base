@@ -213,7 +213,27 @@ for p in json.load(sys.stdin).get('result',{}).get('panes',[]):
 "
 }
 
+# El pane ENFOCADO es del humano: si lo esta mirando/tocando, no existe
+# ningun caso en que tiparle este bien — ni "estable", ni "idle", ni nada.
+_h_es_del_humano() {
+  herdr pane list 2>/dev/null | python3 -c "
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(1)
+for p in d.get('result',{}).get('panes',[]):
+    if p.get('pane_id')=='$1':
+        sys.exit(0 if p.get('focused') else 1)
+sys.exit(1)"
+}
+
 _herdr_prompt() {
+  # REGLA UNO (2026-08-28, tras tiparle DOS veces al dueño eligiendo modelo):
+  # el pane con FOCO es del humano. La estabilidad de pantalla no alcanza —
+  # un humano leyendo la lista de modelos tambien deja la pantalla quieta.
+  if _h_es_del_humano "$1"; then
+    echo "harness: $1 tiene el FOCO — el humano esta ahi, no se le tipea" >&2
+    return 3
+  fi
   if ! _h_estable "$1"; then
     echo "harness: $1 con actividad reciente en pantalla (humano o modelo) — no es momento" >&2
     return 3
