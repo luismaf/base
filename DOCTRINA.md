@@ -137,3 +137,64 @@ clasifican con evidencia (contra el código, no a ojo) y se **asignan a una
 etapa futura del roadmap** en el mismo acto. Lo bueno y corto se hace ya —
 "si es bueno y sale en un ratito, se hace, no se congela". El análisis no se
 patea para adelante: la clasificación ES el análisis.
+
+## 7. La herramienta, decidida (2026-08-28): climax es la base
+
+Investigado [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
+(dsh): 200k estrellas, MIT, todo-es-plugin, CLI+Web UI. Veredicto: es un
+**runtime de UN agente** (con subagentes), en developer preview — no tiene
+tablero, ni presupuesto, ni pausa, ni ciclo de vida de N devs. Lo que nos
+falta es exactamente la capa que dsh no tiene. No se forkea ni se tuerce la
+trayectoria; se re-evalúa a futuro como runtime de devs o escribiendo un
+dsh-plugin que exponga los nuestros.
+
+**La base es [climax](../climax)** — ya maduro, empaquetado (instalador,
+systemd opt-in), habla herdr, y su función original ES una de las pedidas:
+vigilar la ventana de cuota por el statusLine oficial (sin scrapear pantallas)
+y **reactivar agentes cuando la ventana reabre**, delegando tareas pendientes
+antes de morir. Fácil de arrancar, fácil de detener, entendible. Sobre esa
+base se agregan, en orden: `climax pause/resume` (global y por agente — lo
+primero), el contador de presupuesto (tope de devs, USD/día, sesión fresca a
+~50k, informe USD-por-resultado), el ciclo de vida de N devs, y el reparto por
+protocolo. **rodeo** ya existe como la cara móvil (server sobre el socket de
+herdr → app de bolsillo): queda como UI de climax, no como proyecto aparte.
+El nombre final no importa ahora. **idge (ia-bridge)** — los jefes de
+proyectos distintos hablándose — nace después como módulo de esta misma base
+(Etapa 3). Abierta: la key de Claude directa en opencode vs la interfaz de
+Claude Code — medir qué se gana/pierde (contexto, herramientas, costo).
+
+**Devs locales primero, nube switcheable**: la flota corre local (el 13700K);
+el VPS es espejo y refugio (corte de luz programado = seguir desde la nube).
+El objetivo: cambiar local⇄nube con un comando.
+
+## 8. El canal profesional y el costo por usuario
+
+- **Se entra por el profesional**: contador, abogado, ingeniero agrónomo,
+  veterinario — tienen la cartera de clientes y el dolor administrativo.
+  Acopios/consignatarios: quizá no como canal (se sientan sobre el dinero,
+  demasiados intereses) pero sí como usuarios. **ESTUDIAR cómo lo hacen los
+  demás, local e internacional** (Xubio/Colppy acá; QuickBooks ProAdvisor,
+  Xero Partner Program afuera) antes de definir el nuestro.
+- **Se vende el dolor aliviado, no el sistema**: para cada tipo de usuario,
+  qué le morigeramos. Lo que hace el software es irrelevante en la venta.
+- **Costo por usuario, medido**: un contador con 50 clientes o un acopio
+  pueden costarnos mucho más (DB, disco) que un productor chico. Antes de
+  regalar nada: saber el costo. "Lo gratis nunca es valorado" — si se regala,
+  es gasto de publicidad consciente, no generosidad ciega.
+- **Programa de benchmark permanente** (fanatismo por performance y costo):
+  auditoría continua de qué impacto tiene cada cosa en performance,
+  escalabilidad, disco y RAM. Medir cuánto rinde el hosting actual (12 GB /
+  2 ARM) y derivar la unidad económica: **usuarios por núcleo A1 + 1 GB RAM +
+  disco**, proyectado a 2 años de datos acumulados. Ese número define
+  precios, planes y qué se puede regalar.
+
+## 9. El futuro sinérgico (registrado para no perderse)
+
+La visión completa, con los pies del presente: un club con punto de venta de
+café y comidas; la oficina registra compras y gastos; la contabilidad le
+LLEGA al contador sin que nadie mande un archivo; el cliente ve los VEP a
+pagar en la misma app; notificación al encargado: "hoy vence el 931 —
+¿pagar?" → la API del banco ejecuta el pago. Contador, sueldos, seguros
+geolocalizados, pagos: el mismo patrón — **la información viaja sola entre
+las partes que hoy se persiguen por teléfono**. Es Etapa 3+ del roadmap; se
+construye cuando el presente esté redondo.
