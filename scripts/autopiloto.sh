@@ -133,6 +133,23 @@ fi
 JP=$(cat "$REPO/.logs/jefe.panel" 2>/dev/null)
 [ -n "$JP" ] && EXCLUIDO["$JP"]=jefe-dinamico
 
+# Y POR NOMBRE (dueño 2026-08-28, "deberia leer jefe y no mandar"): cualquier
+# pane cuyo AGENTE se llame jefe/supervisor queda fuera del reparto, exista o
+# no el archivo. La evidencia del nombre manda sobre cualquier registro.
+while read -r pid nombre; do
+  [ -n "$pid" ] && EXCLUIDO["$pid"]=jefe-por-nombre
+done < <(herdr pane list 2>/dev/null | python3 -c "
+import json,sys,re
+try: d=json.load(sys.stdin)
+except Exception: sys.exit()
+rx=re.compile(r'jefe|supervisor', re.I)
+for p in d.get('result',{}).get('panes',[]):
+    a=p.get('agent'); nombre=(a.get('name') if isinstance(a,dict) else '') or ''
+    titulo=p.get('terminal_title_stripped','') or ''
+    if rx.search(nombre) or rx.search(titulo.split('|')[0]):
+        print(p['pane_id'], nombre or titulo[:20])
+")
+
 if [ -f "$REPO/scripts/no-repartir.conf" ]; then
   while IFS= read -r l; do
     l="${l%%#*}"; l="${l// /}"
