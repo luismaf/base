@@ -222,6 +222,14 @@ La versión alfa puede hardcodear; el diseño se piensa así desde ahora:
   generalización de lo que ya hacen `DEVS_RE`/`DEVS_PANTALLA_RE` en el
   harness de shell: el demonio la hereda como principio de diseño desde el
   día uno, aunque la alfa traiga los perfiles hardcodeados.
+- **El ruidito, silenciable y APAGADO por defecto**: ¿a quién le importa el
+  sonido de un worker terminando una tarea? Notificación sonora opt-in.
+- **El control del layout en dos estados**, tal cual lo dibujó el dueño:
+  visible `[-][1][2][3]` / oculto `Oculto: [+][1][2][3]` — el [-]/[+]
+  colapsa o expande el bloque de workers, los números eligen cuántos.
+- **La vara**: apuntar a empresa grande — user-centric, que ENTREGA VALOR.
+  Cada decisión de esta cara se juzga con esa vara, no con la comodidad
+  del que la programa.
 - **¿Web, Tauri o fork de herdr?** Decisión para cuando el demonio exista y
   la API mande: herdr está bien hoy; una web quizá sea mejor, quizá no; un
   fork de herdr con este layout es candidato. La API del demonio hace que la
